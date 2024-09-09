@@ -7,3 +7,4 @@ edition = "2021"
 clap = { version = "4.5.8", features = ["derive"] }
 configparser = "3.1.0"
 zune-inflate = "0.2.54"
+sha1 = "0.10.6"

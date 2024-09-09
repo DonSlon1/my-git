@@ -21,7 +21,10 @@ pub fn add(mut path: String) {
         Some(v) => {
             let e =v.object_read(String::from("001b3da827e2c31c716396bea874b0d8d15d1a6e"));
             match e {
-                Ok(_) => {}
+                Ok(ob) => {
+                    println!("{:?}",v.object_write(ob));
+                }
+
                 Err(e) => {println!("{}",e.to_string())}
             }
         }
