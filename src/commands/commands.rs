@@ -19,8 +19,11 @@ pub fn add(mut path: String) {
     match git_repo {
         None => {}
         Some(v) => {
-            println!("{:?}",v)
+            let e =v.object_read(String::from("001b3da827e2c31c716396bea874b0d8d15d1a6e"));
+            match e {
+                Ok(_) => {}
+                Err(e) => {println!("{}",e.to_string())}
+            }
         }
     }
-    
 }

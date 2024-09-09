@@ -1,5 +1,5 @@
-use crate::helpers::file::is_my_git_dir;
 use crate::helpers::config;
+use crate::helpers::file::is_my_git_dir;
 use configparser::ini::Ini;
 use std::path::{Path, PathBuf};
 
@@ -58,24 +58,23 @@ impl GitRepo {
 
         git_repo
     }
-    
+
     pub fn repo_find(path: PathBuf) -> Option<GitRepo> {
         let git_path = path.clone().join(".git");
-        if git_path.exists() { 
-            return Some(GitRepo::init(path,false))
+        if git_path.exists() {
+            return Some(GitRepo::init(path, false));
         }
-        
+
         let parent = match path.parent() {
             None => {
                 return None;
             }
-            Some(v) => v
-            
+            Some(v) => v,
         };
-        if path.eq(parent) { 
+        if path.eq(parent) {
             return None;
         }
-        
+
         GitRepo::repo_find(parent.to_path_buf())
     }
 

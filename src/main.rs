@@ -39,10 +39,10 @@ fn main() {
 
     match &cli.command {
         Commands::Add { path } => {
-            commands::init::add(path.clone());
+            commands::commands::add(path.clone());
         }
         Commands::Init { path } => {
-            commands::init::init(path.clone());
+            commands::commands::init(path.clone());
         }
         Commands::Checkout { path } => {
             println!("'myapp checkout' was used");
