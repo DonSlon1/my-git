@@ -7,13 +7,16 @@ use sha1::{Digest, Sha1Core};
 use sha1::digest::{DynDigest, Update};
 use sha1::digest::core_api::CoreWrapper;
 use zune_inflate::errors::InflateDecodeErrors;
+use crate::helpers::git_objects::blob::GitBlob;
+use crate::helpers::git_objects::commit::GitCommit;
+use crate::helpers::git_objects::tag::GitTag;
+use crate::helpers::git_objects::tree::GitTree;
 
 pub trait GitObject {
     fn serialize(&self) -> Vec<u8>;
     fn deserialize(&self) -> Vec<u8>;
     fn fmt(&self) -> &[u8];
 }
-
 
 
 impl GitRepo {
@@ -58,16 +61,13 @@ impl GitRepo {
 
                 let object: Box<dyn GitObject> = match fmt {
                     b"commit" => {
-                        // Box::new(GitCommit::new(data))
-                        return Err("GitCommit type not implemented".into());
+                        Box::new(GitCommit::new(Vec::from(data)))
                     }
                     b"tree" => {
-                        // Box::new(GitTree::new(data))
-                        return Err("GitTree type not implemented".into());
+                        Box::new(GitTree::new(Vec::from(data)))
                     }
                     b"tag" => {
-                        // Box::new(GitTag::new(data))
-                        return Err("GitTag type not implemented".into());
+                        Box::new(GitTag::new(Vec::from(data)))
                     }
                     b"blob" => Box::new(GitBlob::new(Vec::from(data))),
                     _ => {
