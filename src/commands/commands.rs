@@ -1,7 +1,8 @@
-use crate::helpers::file::{create_new_my_git, is_my_git_dir};
+use crate::helpers::file::{create_new_my_git};
 use crate::helpers::git::GitRepo;
+use crate::helpers::git_objects::git_object::ObjectType;
 
-pub fn init(mut path: String) {
+pub fn init(path: String) {
     let r = create_new_my_git(path.into());
     match r {
         Ok(_) => {
@@ -14,7 +15,7 @@ pub fn init(mut path: String) {
     }
 }
 
-pub fn add(mut path: String) {
+pub fn add(path: String) {
     let git_repo = GitRepo::repo_find(path.into());
     match git_repo {
         None => {}
@@ -27,6 +28,18 @@ pub fn add(mut path: String) {
 
                 Err(e) => {println!("{}",e.to_string())}
             }
+        }
+    }
+}
+
+pub fn  cat_file(object_type: &ObjectType, object: &String) {
+    let repo = GitRepo::repo_find(".".into());
+    match repo {
+        None => {
+            eprintln!("No git repo find")
+        }
+        Some(v) => {
+            println!("{}",v.cat_file(object.clone(), object_type.clone()).unwrap())
         }
     }
 }

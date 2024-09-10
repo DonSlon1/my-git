@@ -1,16 +1,56 @@
 use crate::helpers::git::GitRepo;
-use clap::builder::Str;
-use std::fmt::format;
-use std::fs::File;
-use std::path::PathBuf;
-use sha1::{Digest, Sha1Core};
-use sha1::digest::{DynDigest, Update};
-use sha1::digest::core_api::CoreWrapper;
-use zune_inflate::errors::InflateDecodeErrors;
+use std::str::FromStr;
+use sha1::Digest;
 use crate::helpers::git_objects::blob::GitBlob;
 use crate::helpers::git_objects::commit::GitCommit;
 use crate::helpers::git_objects::tag::GitTag;
 use crate::helpers::git_objects::tree::GitTree;
+
+
+#[derive(Clone)]
+#[repr(u8)]
+pub enum ObjectType {
+    Blob,
+    Tree,
+    Commit,
+    Tag
+}
+
+impl ObjectType {
+    pub fn as_iter(&self) -> &[u8] {
+        match self {
+            ObjectType::Blob => b"blob",
+            ObjectType::Tree => b"tree",
+            ObjectType::Commit => b"commit",
+            ObjectType::Tag => b"tag"
+        }
+    }
+}
+
+impl ToString for ObjectType {
+    fn to_string(&self) -> String {
+        match self {
+            ObjectType::Blob => "blob".to_string(),
+            ObjectType::Tree => "tree".to_string(),
+            ObjectType::Commit => "commit".to_string(),
+            ObjectType::Tag => "tag".to_string()
+        }
+    }
+}
+
+impl FromStr for ObjectType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s { 
+            "blob" => Ok(ObjectType::Blob),
+            "tree" => Ok(ObjectType::Tree),
+            "commit" => Ok(ObjectType::Commit),
+            "tag" => Ok(ObjectType::Tag),
+            e => Err(format!("Invalid object type: {}",e))
+        }
+    }
+}
 
 pub trait GitObject {
     fn serialize(&self) -> Vec<u8>;
@@ -24,8 +64,7 @@ impl GitRepo {
     /// GitObject whose exact type depends on the object.
     pub fn object_read(&self, sha: String) -> Result<Box<dyn GitObject>,String> {
         let sha_split = sha.split_at(2);
-        //let path = self.repo_file(format!("objects/{}/{}", sha_split.0, sha_split.1), false)?;
-        let path:PathBuf = "/home/lukas/Nero/.git/objects/03/2464fb6ec40a523899b8c8a593242f3108a420".into();
+        let path = self.repo_file(format!("objects/{}/{}", sha_split.0, sha_split.1), false)?;
         
         if !path.is_file() { 
             return Err(format!("Path: {:?} is not a file",path))
@@ -121,5 +160,24 @@ impl GitRepo {
         }
 
         Ok(sha)
+    }
+    
+    pub fn cat_file(&self, object:String, object_type: ObjectType) -> Result<String,String> {
+        let data = self.object_read(self.obj_file(object.clone(), object_type.to_string(), None))?;
+        let serialized_data = data.serialize();
+        
+        let result_str = serialized_data.iter()
+            .filter(|&byte| {
+                byte.is_ascii() && (byte.is_ascii_graphic() || byte.is_ascii_whitespace())
+            })
+            .map(|&byte| {
+                byte as char
+            }).collect::<String>();
+        
+        Ok(result_str)
+    }
+    
+    pub fn obj_file(&self,object: String, _fmt: String, _follow: Option<bool>) -> String {
+        object
     }
 }

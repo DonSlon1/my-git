@@ -1,6 +1,8 @@
 mod commands;
 pub mod helpers;
 use clap::{Parser, Subcommand};
+use commands::commands::{add, cat_file, init};
+use helpers::git_objects::git_object::ObjectType;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -32,6 +34,10 @@ enum Commands {
         #[clap(default_value_t = helpers::file::get_exe_dir())]
         path: String,
     },
+    CatFile {
+        object_type: ObjectType,
+        object: String
+    }
 }
 
 fn main() {
@@ -39,19 +45,22 @@ fn main() {
 
     match &cli.command {
         Commands::Add { path } => {
-            commands::commands::add(path.clone());
+            add(path.clone());
         }
         Commands::Init { path } => {
-            commands::commands::init(path.clone());
+            init(path.clone());
         }
-        Commands::Checkout { path } => {
+        Commands::Checkout { path: _path } => {
             println!("'myapp checkout' was used");
         }
-        Commands::Commit { path } => {
+        Commands::Commit { path: _path } => {
             println!("'myapp commit' was used");
         }
-        Commands::Rm { path } => {
+        Commands::Rm { path: _path } => {
             println!("'myapp rm' was used");
+        }
+        Commands::CatFile { object_type,object } => {
+            cat_file(object_type,object);
         }
     }
 }

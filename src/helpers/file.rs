@@ -1,8 +1,5 @@
 use crate::helpers::{config, git};
-use clap::builder::Str;
-use std::collections::{HashMap, HashSet};
-use std::f32::consts::E;
-use std::ffi::OsString;
+use std::collections::HashSet;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
@@ -47,7 +44,7 @@ pub fn is_my_git_dir(mut path: PathBuf) -> bool {
     mandatory_files.len() == 0
 }
 
-pub fn create_new_my_git(mut path: PathBuf) -> Result<bool, String> {
+pub fn create_new_my_git(path: PathBuf) -> Result<bool, String> {
     let get_repo = git::GitRepo::init(path.clone(), true);
 
     if get_repo.work_dir.exists() {

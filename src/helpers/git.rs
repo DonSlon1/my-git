@@ -1,7 +1,7 @@
 use crate::helpers::config;
 use crate::helpers::file::is_my_git_dir;
 use configparser::ini::Ini;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct GitRepo {
