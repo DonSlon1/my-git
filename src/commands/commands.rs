@@ -23,7 +23,7 @@ pub fn add(path: String) {
             let e =v.object_read(String::from("001b3da827e2c31c716396bea874b0d8d15d1a6e"));
             match e {
                 Ok(ob) => {
-                    println!("{:?}",v.object_write(ob));
+                    println!("{:?}",GitRepo::object_write(Some(v),ob));
                 }
 
                 Err(e) => {println!("{}",e.to_string())}
@@ -42,4 +42,16 @@ pub fn  cat_file(object_type: &ObjectType, object: &String) {
             println!("{}",v.cat_file(object.clone(), object_type.clone()).unwrap())
         }
     }
+}
+
+pub fn hash_obj(object_type: &ObjectType, path: &String, write: &bool) {
+    let repo = match write {
+        true => GitRepo::repo_find(".".into()),
+        false => None
+    };
+    let sha = GitRepo::hash_obj(repo,path.into(),object_type.clone());
+    match sha {
+        Ok(v) => println!("{}",v),
+        Err(e) => eprintln!("{}",e)
+    };
 }

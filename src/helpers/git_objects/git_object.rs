@@ -1,5 +1,9 @@
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
 use crate::helpers::git::GitRepo;
 use std::str::FromStr;
+use clap::ValueEnum;
 use sha1::Digest;
 use crate::helpers::git_objects::blob::GitBlob;
 use crate::helpers::git_objects::commit::GitCommit;
@@ -7,7 +11,7 @@ use crate::helpers::git_objects::tag::GitTag;
 use crate::helpers::git_objects::tree::GitTree;
 
 
-#[derive(Clone)]
+#[derive(Clone,ValueEnum)]
 #[repr(u8)]
 pub enum ObjectType {
     Blob,
@@ -48,6 +52,18 @@ impl FromStr for ObjectType {
             "commit" => Ok(ObjectType::Commit),
             "tag" => Ok(ObjectType::Tag),
             e => Err(format!("Invalid object type: {}",e))
+        }
+    }
+}
+pub struct  GitObjectFactory;
+
+impl GitObjectFactory {
+    pub fn new(object_type: ObjectType,data: Vec<u8>) -> Box<dyn GitObject> {
+        match object_type {
+            ObjectType::Blob => Box::new(GitBlob::new(data)),
+            ObjectType::Tree => Box::new(GitTree::new(data)),
+            ObjectType::Commit => Box::new(GitCommit::new(data)),
+            ObjectType::Tag => Box::new(GitTag::new(data)) 
         }
     }
 }
@@ -126,7 +142,7 @@ impl GitRepo {
         }
     }
     
-    pub fn object_write(&self, object: Box<dyn GitObject>) -> Result<String,String> {
+    pub fn object_write(repo: Option<GitRepo>,object: Box<dyn GitObject>) -> Result<String,String> {
         let data = object.serialize();
         let size_str = data.len().to_string();
         let size_bytes = size_str.as_bytes();
@@ -143,20 +159,22 @@ impl GitRepo {
         Digest::update(&mut hasher, data);
         let hash = hasher.finalize();
         let sha:String  = hash.iter().map(|b| format!("{:02x}", b)).collect();
-        
-        // write data to file
-        let split_sha = sha.split_at(2);
-        let path = self.repo_file(format!("objects/{}/{}",split_sha.0,split_sha.1),true)?;
-        
-        if !path.exists() {
-            match std::fs::write(path,zune_inflate::DeflateEncoder::new(data).encode_zlib()) {
-                Ok(_) => {}
-                Err(e) => {
-                    return Err(format!("{}",e.to_string()));
+        if let Some(repo) = repo {
+
+            // write data to file
+            let split_sha = sha.split_at(2);
+            let path = repo.repo_file(format!("objects/{}/{}", split_sha.0, split_sha.1), true)?;
+
+            if !path.exists() {
+                match std::fs::write(path, zune_inflate::DeflateEncoder::new(data).encode_zlib()) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(format!("{}", e.to_string()));
+                    }
                 }
+            } else {
+                println!("existuje");
             }
-        } else {
-            println!("existuje");
         }
 
         Ok(sha)
@@ -179,5 +197,11 @@ impl GitRepo {
     
     pub fn obj_file(&self,object: String, _fmt: String, _follow: Option<bool>) -> String {
         object
+    }
+    
+    pub fn hash_obj(repo: Option<GitRepo>, path: PathBuf, fmt: ObjectType) -> Result<String,String> {
+        let data = std::fs::read(path).map_err(|e| e.to_string())?;
+        let obj: Box<dyn GitObject> = GitObjectFactory::new(fmt,data);
+        GitRepo::object_write(repo,obj)
     }
 }

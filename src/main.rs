@@ -1,7 +1,7 @@
 mod commands;
 pub mod helpers;
 use clap::{Parser, Subcommand};
-use commands::commands::{add, cat_file, init};
+use commands::commands::{add, cat_file, init, hash_obj};
 use helpers::git_objects::git_object::ObjectType;
 
 #[derive(Parser)]
@@ -37,6 +37,13 @@ enum Commands {
     CatFile {
         object_type: ObjectType,
         object: String
+    },
+    HashObject {
+        path: String,
+        #[clap(short, action)]
+        write: bool,
+        #[clap(short = 't', action,value_enum, default_value_t=ObjectType::Blob)]
+        object_type: ObjectType,
     }
 }
 
@@ -61,6 +68,9 @@ fn main() {
         }
         Commands::CatFile { object_type,object } => {
             cat_file(object_type,object);
+        },
+        Commands::HashObject { object_type, path, write } => {
+            hash_obj(object_type,path,write)
         }
     }
 }
