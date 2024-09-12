@@ -1,7 +1,9 @@
+use std::collections::HashSet;
 use crate::helpers::config;
 use crate::helpers::file::is_my_git_dir;
 use configparser::ini::Ini;
 use std::path::PathBuf;
+use crate::helpers::git_objects::git_object::GitObject;
 
 #[derive(Debug)]
 pub struct GitRepo {
@@ -118,5 +120,18 @@ impl GitRepo {
             return Ok(self.repo_path(file_path.to_string()));
         }
         Err("Try that again late".to_string())
+    }
+    
+    pub fn log(&self, sha: String, mut seen: HashSet<String>) {
+        if seen.contains(&sha) { return; }
+        seen.insert(sha.clone());
+        
+        let object = match self.object_read(sha) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("{}",e);
+                return;
+            }
+        };
     }
 }

@@ -1,17 +1,19 @@
+use std::any::Any;
 use crate::helpers::git_objects::git_object::GitObject;
 
-pub struct GitTag<'a> {
-    fmt: &'a [u8],
+#[derive(Debug)]
+pub struct GitTag {
+    fmt: Vec<u8>,
     data: Vec<u8>,
 }
 
-impl<'a> GitTag<'a> {
+impl GitTag {
     pub fn new(data:Vec<u8>) -> Self {
-        GitTag { fmt: b"tag", data }
+        GitTag { fmt: b"tag".to_vec(), data }
     }
 }
 
-impl GitObject for GitTag<'_> {
+impl GitObject for GitTag {
     fn serialize(&self) -> String {
         self.data.iter()
             .filter(|&byte| {
@@ -30,7 +32,11 @@ impl GitObject for GitTag<'_> {
         self.data.clone()
     }
 
-    fn fmt(&self) -> &[u8] {
-        self.fmt
+    fn format(&self) -> Vec<u8> {
+        self.fmt.clone()
+    }
+
+    fn as_ref(&self) -> Box<dyn Any> {
+        todo!()
     }
 }

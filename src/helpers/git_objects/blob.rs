@@ -1,17 +1,19 @@
+use std::any::Any;
 use crate::helpers::git_objects::git_object::GitObject;
 
-pub struct GitBlob<'a> {
-    fmt: &'a [u8],
+#[derive(Debug)]
+pub struct GitBlob {
+    fmt: Vec<u8>,
     data: Vec<u8>,
 }
 
-impl<'a> GitBlob<'a> {
+impl GitBlob {
     pub fn new(data:Vec<u8>) -> Self {
-        GitBlob { fmt: b"blob", data }
+        GitBlob { fmt: b"blob".to_vec(), data }
     }
 }
 
-impl GitObject for GitBlob<'_> {
+impl GitObject for GitBlob {
     fn serialize(&self) -> String {
         self.data.iter()
             .filter(|&byte| {
@@ -21,15 +23,19 @@ impl GitObject for GitBlob<'_> {
                 byte as char
             }).collect::<String>()
     }
-    fn data(&self) -> Vec<u8> {
-        self.data.clone()
-    }
-
     fn deserialize(&self) -> Vec<u8> {
         self.data.clone()
     }
 
-    fn fmt(&self) -> &[u8] {
-        self.fmt
+    fn format(&self) -> Vec<u8> {
+        self.fmt.clone()
+    }
+
+    fn data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+
+    fn as_ref(&self) -> Box<dyn Any> {
+        todo!()
     }
 }

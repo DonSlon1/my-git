@@ -1,15 +1,17 @@
+use std::any::Any;
 use std::hash::RandomState;
 use ordermap::OrderMap;
 use crate::helpers::git_objects::git_object::GitObject;
 use crate::helpers::kvlm::{kvlm_parse, kvlm_serialize};
 
-pub struct GitCommit<'a> {
-    fmt: &'a [u8],
+#[derive(Debug)]
+pub struct GitCommit {
+    fmt: Vec<u8>,
     data: Vec<u8>,
     kvlm: OrderMap<Vec<u8>,Vec<Vec<u8>>,RandomState>
 }
 
-impl<'a> GitCommit<'a> {
+impl GitCommit {
     pub fn new(data: Vec<u8>) -> Self {
         let borrowed_kvlm = kvlm_parse(&data, None, None);
 
@@ -18,14 +20,14 @@ impl<'a> GitCommit<'a> {
             .map(|(k, v)| (k.to_vec(), v))
             .collect();
         GitCommit {
-            fmt: b"commit",
+            fmt: b"commit".to_vec(),
             data,
             kvlm,
         }
     }
 }
 
-impl GitObject for GitCommit<'_> {
+impl GitObject for GitCommit {
     fn serialize(&self) -> String {
         kvlm_serialize(&self.kvlm)
     }
@@ -38,7 +40,11 @@ impl GitObject for GitCommit<'_> {
         self.data.clone()
     }
 
-    fn fmt(&self) -> &[u8] {
-        self.fmt
+    fn format(&self) -> Vec<u8> {
+        self.fmt.clone()
+    }
+
+    fn as_ref(&self) -> Box<dyn Any> {
+        todo!()
     }
 }

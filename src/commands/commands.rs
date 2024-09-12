@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io::Write;
 use ordermap::OrderMap;
 use crate::helpers::file::{create_new_my_git};
@@ -65,4 +66,16 @@ pub fn hash_obj(object_type: &ObjectType, path: &String, write: &bool) {
         Ok(v) => println!("{}",v),
         Err(e) => eprintln!("{}",e)
     };
+}
+
+pub fn log(commit: String) {
+    let repo = GitRepo::repo_find(".".into());
+    match repo {
+        None => {
+            eprintln!("No git repo find")
+        }
+        Some(v) => {
+            v.log(commit,HashSet::new());
+        }
+    }
 }

@@ -44,6 +44,10 @@ enum Commands {
         write: bool,
         #[clap(short = 't', action,value_enum, default_value_t=ObjectType::Blob)]
         object_type: ObjectType,
+    },
+    Log {
+        #[clap(default_value="HEAD")]
+        commit: String
     }
 }
 
@@ -71,6 +75,9 @@ fn main() {
         },
         Commands::HashObject { object_type, path, write } => {
             hash_obj(object_type,path,write)
+        },
+        Commands::Log { commit} =>{
+            println!("{}",commit);
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::any::Any;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
@@ -55,10 +57,10 @@ impl FromStr for ObjectType {
         }
     }
 }
-pub struct  GitObjectFactory;
+pub struct GitObjectFactory;
 
 impl GitObjectFactory {
-    pub fn new(object_type: ObjectType,data: Vec<u8>) -> Box<dyn GitObject> {
+    pub fn new(object_type: ObjectType, data: Vec<u8>) -> Box<dyn GitObject> {
         match object_type {
             ObjectType::Blob => Box::new(GitBlob::new(data)),
             ObjectType::Tree => Box::new(GitTree::new(data)),
@@ -68,11 +70,12 @@ impl GitObjectFactory {
     }
 }
 
-pub trait GitObject {
+pub trait GitObject: Any + Debug {
     fn serialize(&self) -> String;
     fn deserialize(&self) -> Vec<u8>;
-    fn fmt(&self) -> &[u8];
+    fn format(&self) -> Vec<u8>;
     fn data(&self) -> Vec<u8>;
+    fn as_ref(&self) -> Box<dyn Any>;
 }
 
 
@@ -149,7 +152,7 @@ impl GitRepo {
         let size_bytes = size_str.as_bytes();
 
         let mut result = Vec::new();
-        result.extend_from_slice(object.fmt());
+        result.extend_from_slice(&object.format());
         result.push(b' ');
         result.extend_from_slice(size_bytes);
         result.push(b'\x00');

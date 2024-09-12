@@ -1,17 +1,19 @@
+use std::any::Any;
 use crate::helpers::git_objects::git_object::GitObject;
 
-pub struct GitTree<'a> {
-    fmt: &'a [u8],
+#[derive(Debug)]
+pub struct GitTree {
+    fmt: Vec<u8>,
     data: Vec<u8>,
 }
 
-impl<'a> GitTree<'a> {
+impl GitTree {
     pub fn new(data:Vec<u8>) -> Self {
-        GitTree { fmt: b"tree", data }
+        GitTree { fmt: b"tree".to_vec(), data }
     }
 }
 
-impl GitObject for GitTree<'_> {
+impl GitObject for GitTree {
     fn serialize(&self) -> String {
         self.data.iter()
             .filter(|&byte| {
@@ -30,7 +32,11 @@ impl GitObject for GitTree<'_> {
         self.data.clone()
     }
 
-    fn fmt(&self) -> &[u8] {
-        self.fmt
+    fn format(&self) -> Vec<u8> {
+        self.fmt.clone()
+    }
+
+    fn as_ref(&self) -> Box<dyn Any> {
+        todo!()
     }
 }
