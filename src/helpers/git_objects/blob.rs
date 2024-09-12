@@ -12,7 +12,16 @@ impl<'a> GitBlob<'a> {
 }
 
 impl GitObject for GitBlob<'_> {
-    fn serialize(&self) -> Vec<u8> {
+    fn serialize(&self) -> String {
+        self.data.iter()
+            .filter(|&byte| {
+                byte.is_ascii() && (byte.is_ascii_graphic() || byte.is_ascii_whitespace())
+            })
+            .map(|&byte| {
+                byte as char
+            }).collect::<String>()
+    }
+    fn data(&self) -> Vec<u8> {
         self.data.clone()
     }
 

@@ -1,7 +1,7 @@
 use std::hash::RandomState;
 use ordermap::OrderMap;
 use crate::helpers::git_objects::git_object::GitObject;
-use crate::helpers::kvlm::{kvlm_parse, kvlm_serilize};
+use crate::helpers::kvlm::{kvlm_parse, kvlm_serialize};
 
 pub struct GitCommit<'a> {
     fmt: &'a [u8],
@@ -26,10 +26,14 @@ impl<'a> GitCommit<'a> {
 }
 
 impl GitObject for GitCommit<'_> {
-    fn serialize(&self) -> Vec<u8> {
-        kvlm_serilize(self.kvlm.clone())
+    fn serialize(&self) -> String {
+        kvlm_serialize(&self.kvlm)
     }
 
+    fn data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+    
     fn deserialize(&self) -> Vec<u8> {
         self.data.clone()
     }

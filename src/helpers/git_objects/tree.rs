@@ -12,10 +12,20 @@ impl<'a> GitTree<'a> {
 }
 
 impl GitObject for GitTree<'_> {
-    fn serialize(&self) -> Vec<u8> {
-        self.data.clone()
+    fn serialize(&self) -> String {
+        self.data.iter()
+            .filter(|&byte| {
+                byte.is_ascii() && (byte.is_ascii_graphic() || byte.is_ascii_whitespace())
+            })
+            .map(|&byte| {
+                byte as char
+            }).collect::<String>()
     }
 
+    fn data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+    
     fn deserialize(&self) -> Vec<u8> {
         self.data.clone()
     }

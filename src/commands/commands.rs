@@ -1,3 +1,4 @@
+use std::io::Write;
 use ordermap::OrderMap;
 use crate::helpers::file::{create_new_my_git};
 use crate::helpers::git::GitRepo;
@@ -49,7 +50,7 @@ pub fn  cat_file(object_type: &ObjectType, object: &String) {
             eprintln!("No git repo find")
         }
         Some(v) => {
-            println!("{}",v.cat_file(object.clone(), object_type.clone()).unwrap())
+            std::io::stdout().write(&*v.cat_file(object.clone(), object_type.clone()).unwrap());
         }
     }
 }

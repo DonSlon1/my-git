@@ -69,9 +69,10 @@ impl GitObjectFactory {
 }
 
 pub trait GitObject {
-    fn serialize(&self) -> Vec<u8>;
+    fn serialize(&self) -> String;
     fn deserialize(&self) -> Vec<u8>;
     fn fmt(&self) -> &[u8];
+    fn data(&self) -> Vec<u8>;
 }
 
 
@@ -152,7 +153,7 @@ impl GitRepo {
         result.push(b' ');
         result.extend_from_slice(size_bytes);
         result.push(b'\x00');
-        result.extend_from_slice(&*data);
+        result.extend_from_slice(data.as_ref());
         
         let mut hasher = sha1::Sha1::new();
         let data : &[u8] = &*result;
@@ -180,19 +181,12 @@ impl GitRepo {
         Ok(sha)
     }
     
-    pub fn cat_file(&self, object:String, object_type: ObjectType) -> Result<String,String> {
+    pub fn cat_file(&self, object:String, object_type: ObjectType) -> Result<Vec<u8>,String> {
         let data = self.object_read(self.obj_file(object.clone(), object_type.to_string(), None))?;
         let serialized_data = data.serialize();
         
-        let result_str = serialized_data.iter()
-            .filter(|&byte| {
-                byte.is_ascii() && (byte.is_ascii_graphic() || byte.is_ascii_whitespace())
-            })
-            .map(|&byte| {
-                byte as char
-            }).collect::<String>();
         
-        Ok(result_str)
+        Ok(data.data())
     }
     
     pub fn obj_file(&self,object: String, _fmt: String, _follow: Option<bool>) -> String {

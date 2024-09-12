@@ -52,7 +52,39 @@ pub fn kvlm_parse<'a>(raw: &'a [u8], start: Option<usize>, dct: Option<OrderMap<
 }
 
 
-pub fn kvlm_serilize(kvlm: OrderMap<Vec<u8>,Vec<Vec<u8>>,RandomState>) -> Vec<u8> {
-    todo!()
-}
+pub fn kvlm_serialize(kvlm: &OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState>) -> String {
+    let mut ret = String::new();
 
+    for (key, values) in kvlm.iter() {
+        if key == b"None" { continue }
+        // Convert key to a String
+        if let Ok(key_str) = String::from_utf8(key.clone()) {
+            for value in values {
+                // Convert value to a String
+                if let Ok(value_str) = String::from_utf8(value.clone()) {
+                    // Replace '\n' with '\n '
+                    let replaced_value = value_str.replace('\n', "\n ");
+
+                    // Append key, replaced value, and newline
+                    ret.push_str(&key_str);
+                    ret.push(' ');
+                    ret.push_str(&replaced_value);
+                    ret.push('\n');
+                }
+            }
+        }
+    }
+
+    // Append message
+    if let Some(message) = kvlm.get(&b"None".to_vec()) {
+        ret.push('\n');
+        for line in message {
+            if let Ok(line_str) = String::from_utf8(line.clone()) {
+                ret.push_str(&line_str);
+            }
+        }
+        ret.push('\n');
+    }
+
+    ret
+}
