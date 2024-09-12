@@ -4,7 +4,7 @@ use ordermap::OrderMap;
 use crate::helpers::git_objects::git_object::GitObject;
 use crate::helpers::kvlm::{kvlm_parse, kvlm_serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GitCommit {
     fmt: Vec<u8>,
     data: Vec<u8>,
@@ -44,7 +44,4 @@ impl GitObject for GitCommit {
         self.fmt.clone()
     }
 
-    fn as_ref(&self) -> Box<dyn Any> {
-        todo!()
-    }
 }

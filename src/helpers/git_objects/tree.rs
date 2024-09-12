@@ -1,7 +1,7 @@
 use std::any::Any;
 use crate::helpers::git_objects::git_object::GitObject;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GitTree {
     fmt: Vec<u8>,
     data: Vec<u8>,
@@ -36,7 +36,4 @@ impl GitObject for GitTree {
         self.fmt.clone()
     }
 
-    fn as_ref(&self) -> Box<dyn Any> {
-        todo!()
-    }
 }

@@ -3,6 +3,7 @@ use crate::helpers::config;
 use crate::helpers::file::is_my_git_dir;
 use configparser::ini::Ini;
 use std::path::PathBuf;
+use crate::helpers::git_objects::commit::GitCommit;
 use crate::helpers::git_objects::git_object::GitObject;
 
 #[derive(Debug)]
@@ -130,6 +131,13 @@ impl GitRepo {
             Ok(v) => v,
             Err(e) => {
                 println!("{}",e);
+                return;
+            }
+        };
+        let commit = match object.as_ref().as_any().downcast_ref::<GitCommit>() { 
+            Some(v) => v,
+            None => {
+                println!("Object is not a commit");
                 return;
             }
         };

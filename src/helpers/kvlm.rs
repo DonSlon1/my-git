@@ -32,7 +32,7 @@ pub fn kvlm_parse<'a>(raw: &'a [u8], start: Option<usize>, dct: Option<OrderMap<
     }
 
     let slice:&[u8] = &raw[spc+1..end];
-    let data = slice.clone()
+    let data = slice
         .chunks(2)
         .flat_map(|chunk| {
             if chunk == b"\n ".as_ref() {

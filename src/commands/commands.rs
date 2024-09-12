@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::io::Write;
-use ordermap::OrderMap;
 use crate::helpers::file::{create_new_my_git};
 use crate::helpers::git::GitRepo;
 use crate::helpers::git_objects::git_object::ObjectType;

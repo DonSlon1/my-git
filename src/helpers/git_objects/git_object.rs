@@ -1,6 +1,5 @@
 use std::any::Any;
 use std::fmt::Debug;
-use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 use crate::helpers::git::GitRepo;
@@ -70,12 +69,21 @@ impl GitObjectFactory {
     }
 }
 
-pub trait GitObject: Any + Debug {
+pub trait GitObject: Any + Debug + AsAny {
     fn serialize(&self) -> String;
     fn deserialize(&self) -> Vec<u8>;
     fn format(&self) -> Vec<u8>;
     fn data(&self) -> Vec<u8>;
-    fn as_ref(&self) -> Box<dyn Any>;
+}
+
+pub trait AsAny {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T: Any> AsAny for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 

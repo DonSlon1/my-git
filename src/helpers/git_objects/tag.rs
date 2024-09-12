@@ -36,7 +36,4 @@ impl GitObject for GitTag {
         self.fmt.clone()
     }
 
-    fn as_ref(&self) -> Box<dyn Any> {
-        todo!()
-    }
 }
