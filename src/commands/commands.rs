@@ -1,5 +1,6 @@
 use std::collections::HashSet;
-use std::io::Write;
+use std::io::{Stdin, Write};
+use std::process::Stdio;
 use crate::helpers::file::{create_new_my_git};
 use crate::helpers::git::GitRepo;
 use crate::helpers::git_objects::git_object::ObjectType;
@@ -74,7 +75,22 @@ pub fn log(commit: String) {
             eprintln!("No git repo find")
         }
         Some(v) => {
-            v.log(commit,HashSet::new());
+            let mut data = "".to_string();
+            v.log(commit,&mut HashSet::new(), &mut data);
+            let pager = std::env::var("PAGER").unwrap_or_else(|_| "less".to_string());
+            
+            let mut child = std::process::Command::new(&pager)
+                .stdin(Stdio::piped())
+                .spawn()
+                .unwrap_or_else(|_| panic!("Failed to start pager: {}", pager));
+            
+            // Write the output to the pager
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(data.as_bytes()).expect("Failed to write to pager");
+            }
+
+            // Wait for the pager process to exit
+            child.wait().expect("Failed to wait on pager");
         }
     }
 }

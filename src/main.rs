@@ -1,7 +1,7 @@
 mod commands;
 pub mod helpers;
 use clap::{Parser, Subcommand};
-use commands::commands::{add, cat_file, init, hash_obj};
+use commands::commands::{add, cat_file, init, hash_obj,log};
 use helpers::git_objects::git_object::ObjectType;
 
 #[derive(Parser)]
@@ -77,7 +77,7 @@ fn main() {
             hash_obj(object_type,path,write)
         },
         Commands::Log { commit} =>{
-            println!("{}",commit);
+            log(commit.clone());
         }
     }
 }

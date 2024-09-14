@@ -8,7 +8,7 @@ use crate::helpers::kvlm::{kvlm_parse, kvlm_serialize};
 pub struct GitCommit {
     fmt: Vec<u8>,
     data: Vec<u8>,
-    kvlm: OrderMap<Vec<u8>,Vec<Vec<u8>>,RandomState>
+    pub kvlm: OrderMap<Vec<u8>,Vec<Vec<u8>>,RandomState>
 }
 
 impl GitCommit {
