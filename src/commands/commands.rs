@@ -4,6 +4,8 @@ use std::process::Stdio;
 use crate::helpers::file::{create_new_my_git};
 use crate::helpers::git::GitRepo;
 use crate::helpers::git_objects::git_object::ObjectType;
+use crate::helpers::git_objects::tree::GitTree;
+use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
 use crate::helpers::kvlm::kvlm_parse;
 
 pub fn init(path: String) {
@@ -20,28 +22,21 @@ pub fn init(path: String) {
 }
 
 pub fn add(path: String) {
-/*    let git_repo = GitRepo::repo_find(path.into());
+    let git_repo = GitRepo::repo_find(path.into());
     match git_repo {
         None => {}
         Some(v) => {
-            let e =v.object_read(String::from("001b3da827e2c31c716396bea874b0d8d15d1a6e"));
+            let e =v.object_read(String::from("dd1cb88b72c47bfd55e6fa51cff67f75550bd735"));
             match e {
                 Ok(ob) => {
-                    println!("{:?}",GitRepo::object_write(Some(v),ob));
+                    println!("{:?}",GitTree::from_raw(&*ob.data()));
                 }
 
                 Err(e) => {println!("{}",e.to_string())}
             }
         }
     }
-*/    let data = 
-        "tree 29ff16c9c14e2652b22f8b78bb08a5a07930c147
-parent 206941306e8a8af65b66eaaaea388a7ae24d49a0
-author Thibault Polge <thibault@thb.lt> 1527025023 +0200
-committer Thibault Polge <thibault@thb.lt> 1527025044 +0200
-
-Create first draft";
-    println!("{:?}",kvlm_parse(data.as_bytes(),None,None));
+    
 }
 
 pub fn  cat_file(object_type: &ObjectType, object: &String) {

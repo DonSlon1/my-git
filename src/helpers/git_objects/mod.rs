@@ -3,3 +3,4 @@ pub mod blob;
 pub mod tag;
 pub mod commit;
 pub mod tree;
+pub mod tree_leaf;

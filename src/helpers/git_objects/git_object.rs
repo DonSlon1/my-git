@@ -62,7 +62,7 @@ impl GitObjectFactory {
     pub fn new(object_type: ObjectType, data: Vec<u8>) -> Box<dyn GitObject> {
         match object_type {
             ObjectType::Blob => Box::new(GitBlob::new(data)),
-            ObjectType::Tree => Box::new(GitTree::new(data)),
+            ObjectType::Tree => Box::new(GitTree::new(data,vec![])),
             ObjectType::Commit => Box::new(GitCommit::new(data)),
             ObjectType::Tag => Box::new(GitTag::new(data)) 
         }
@@ -131,7 +131,7 @@ impl GitRepo {
                         Box::new(GitCommit::new(Vec::from(data)))
                     }
                     b"tree" => {
-                        Box::new(GitTree::new(Vec::from(data)))
+                        Box::new(GitTree::new(Vec::from(data),vec![]))
                     }
                     b"tag" => {
                         Box::new(GitTag::new(Vec::from(data)))
