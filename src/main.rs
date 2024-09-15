@@ -3,7 +3,7 @@ pub mod helpers;
 use clap::{Parser, Subcommand};
 use commands::commands::{add, cat_file, init, hash_obj,log};
 use helpers::git_objects::git_object::ObjectType;
-use crate::commands::commands::ls_tree;
+use crate::commands::commands::{checkout, ls_tree};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -24,8 +24,9 @@ enum Commands {
         path: String,
     },
     Checkout {
+        commit: String,
         #[clap(default_value_t = helpers::file::get_exe_dir())]
-        path: String,
+        path: String
     },
     Commit {
         #[clap(default_value_t = helpers::file::get_exe_dir())]
@@ -67,8 +68,8 @@ fn main() {
         Commands::Init { path } => {
             init(path.clone());
         }
-        Commands::Checkout { path: _path } => {
-            println!("'myapp checkout' was used");
+        Commands::Checkout { commit, path } => {
+            checkout(commit.clone(),path.into());
         }
         Commands::Commit { path: _path } => {
             println!("'myapp commit' was used");

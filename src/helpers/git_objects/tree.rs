@@ -1,4 +1,7 @@
 use std::any::Any;
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::Write;
 use std::ops::Add;
 use std::path::{Path, PathBuf};
 use crate::helpers::git::GitRepo;
@@ -109,6 +112,28 @@ impl GitRepo {
                 self.ls_tree(&leaf.sha, recursive, Some(new_prefix));
             }
             
+        }
+    }
+    pub fn tree_checkout(&self, tree: Box<dyn GitObject>, path: PathBuf) {
+        let tree = match tree.as_ref().as_any().downcast_ref::<GitTree>() {
+            None => {
+                eprintln!("Tree obj is not a tree");
+                return;
+            }
+            Some(v) => v.clone()
+        };
+        for leaf in tree.leafs {
+            let obj = self.object_read(leaf.sha).unwrap();
+            let mut dest = path.clone();
+            dest.push(leaf.path);
+            
+            if obj.format() == b"tree".to_vec() { 
+                std::fs::create_dir_all(dest.clone()).unwrap();
+                self.tree_checkout(obj,dest)
+            } else if obj.format() == b"blob".to_vec() {
+                let mut file = File::create(dest).unwrap();
+                file.write_all(&*obj.data()).unwrap();
+            }
         }
     }
 }
