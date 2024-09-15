@@ -3,7 +3,7 @@ pub mod helpers;
 use clap::{Parser, Subcommand};
 use commands::commands::{add, cat_file, init, hash_obj,log};
 use helpers::git_objects::git_object::ObjectType;
-use crate::commands::commands::{checkout, ls_tree};
+use crate::commands::commands::{checkout, ls_tree, show_ref};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -55,7 +55,15 @@ enum Commands {
         #[clap(short)]
         recursive: bool,
         tree: String
-    }
+    },
+    Tag {
+        name: String,
+        #[clap(short='a')]
+        create: bool,
+        #[clap(default_value="HEAD")]
+        object: String
+    },
+    ShowRef
 }
 
 fn main() {
@@ -88,6 +96,10 @@ fn main() {
         },
         Commands::LsTree { recursive, tree } => {
             ls_tree(recursive,tree)
+        }
+        Commands::Tag { .. } => {}
+        Commands::ShowRef => {
+            show_ref()
         }
     }
 }

@@ -142,3 +142,11 @@ pub fn checkout(sha: String, path: PathBuf) {
     }
     repo.tree_checkout(Box::new(tree.clone()),std::fs::canonicalize(path).unwrap())
 }
+
+pub fn show_ref() {
+    let repo = GitRepo::repo_find(".".into()).unwrap();
+    let ref_list = repo.ref_list(None,"refs".to_string()).unwrap();
+    for (key, value) in ref_list {
+        println!("{} {}", value, key);
+    }
+}
