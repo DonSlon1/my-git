@@ -3,6 +3,7 @@ pub mod helpers;
 use clap::{Parser, Subcommand};
 use commands::commands::{add, cat_file, init, hash_obj,log};
 use helpers::git_objects::git_object::ObjectType;
+use crate::commands::commands::ls_tree;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -48,6 +49,11 @@ enum Commands {
     Log {
         #[clap(default_value="HEAD")]
         commit: String
+    },
+    LsTree {
+        #[clap(short)]
+        recursive: bool,
+        tree: String
     }
 }
 
@@ -78,6 +84,9 @@ fn main() {
         },
         Commands::Log { commit} =>{
             log(commit.clone());
+        },
+        Commands::LsTree { recursive, tree } => {
+            ls_tree(recursive,tree)
         }
     }
 }

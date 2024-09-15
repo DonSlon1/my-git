@@ -131,7 +131,7 @@ impl GitRepo {
                         Box::new(GitCommit::new(Vec::from(data)))
                     }
                     b"tree" => {
-                        Box::new(GitTree::new(Vec::from(data),vec![]))
+                        Box::new(GitTree::from_raw(data))
                     }
                     b"tag" => {
                         Box::new(GitTag::new(Vec::from(data)))

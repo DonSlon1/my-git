@@ -89,3 +89,15 @@ pub fn log(commit: String) {
         }
     }
 }
+
+pub fn ls_tree(recursive: &bool, tree: &String) {
+    let repo = match GitRepo::repo_find(".".into()) {
+        None => {
+            println!("No gi repo find");
+            return;
+        }
+        Some(v) => v,
+    };
+    repo.ls_tree(tree,recursive,Some("".to_string()));
+    
+}

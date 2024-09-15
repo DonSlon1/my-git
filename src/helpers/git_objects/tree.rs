@@ -1,7 +1,8 @@
 use std::any::Any;
 use std::ops::Add;
-use std::path::PathBuf;
-use crate::helpers::git_objects::git_object::GitObject;
+use std::path::{Path, PathBuf};
+use crate::helpers::git::GitRepo;
+use crate::helpers::git_objects::git_object::{AsAny, GitObject};
 use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
 
 #[derive(Debug, Clone)]
@@ -59,5 +60,55 @@ impl GitObject for GitTree {
 
     fn format(&self) -> Vec<u8> {
         self.fmt.clone()
+    }
+}
+
+
+impl GitRepo {
+    pub fn ls_tree(&self, tree: &String, recursive: &bool, prefix: Option<String>) {
+        let sha = self.obj_file(tree.clone(),"tree".to_string(),None);
+        let prefix = prefix.unwrap_or("".to_string());
+        let obj = match self.object_read(sha) {
+            Ok(v) => {v}
+            Err(_) => {return;}
+        };
+        let obj = match obj.as_ref().as_any().downcast_ref::<GitTree>() {
+            None => {
+                println!("{}", "Object is not a tree".to_string());
+                return;
+            }
+            Some(v) => v.clone(),
+        };
+        for leaf in obj.leafs {
+            let mut mode_type;
+            if leaf.mode.len() == 5  {
+                mode_type = &leaf.mode[0..1]; 
+            } else { 
+                mode_type = &leaf.mode[0..2];
+            }
+            
+            match mode_type { 
+                "04" => {mode_type = "tree"},
+                "10" => {mode_type = "blob"},
+                "12" => {mode_type = "blob"},
+                "16" => {mode_type = "commit"},
+                _ => {
+                    println!("Unsoported leaf type: {}",leaf.mode)
+                }
+            }
+            if !(*recursive && mode_type == "tree") {
+                println!(
+                    "{:0>6} {} {}\t{}",
+                    leaf.mode,
+                    mode_type,
+                    leaf.sha,
+                    Path::new(&prefix).join(&leaf.path).display()
+                );
+            } else {
+                let new_prefix = Path::new(&prefix).join(&leaf.path).display().to_string();
+                self.ls_tree(&leaf.sha, recursive, Some(new_prefix));
+            }
+            
+        }
     }
 }
