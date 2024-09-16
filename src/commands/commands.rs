@@ -201,3 +201,8 @@ pub fn tag(name: &Option<String>, create: &bool, object: &String, message: &Opti
         ),
     }
 }
+
+pub fn rev_parse(name: &String) {
+    let repo = GitRepo::repo_find(".".into()).unwrap();
+    println!("{}",repo.obj_find(name.clone(), None, Some(true)).unwrap())
+}
