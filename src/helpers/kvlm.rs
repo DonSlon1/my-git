@@ -1,25 +1,42 @@
-use std::hash::RandomState;
 use ordermap::OrderMap;
 use sha1::digest::typenum::Integer;
+use std::hash::RandomState;
 
-pub fn kvlm_parse<'a>(raw: &'a [u8], start: Option<usize>, dct: Option<OrderMap<Vec<u8>,Vec<Vec<u8>>,RandomState>>) -> OrderMap<Vec<u8>,Vec<Vec<u8>>,RandomState> {
+pub fn kvlm_parse<'a>(
+    raw: &'a [u8],
+    start: Option<usize>,
+    dct: Option<OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState>>,
+) -> OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState> {
     let mut dct = dct.unwrap_or(OrderMap::new());
     let start = start.unwrap_or(0);
 
-    let spc = raw.iter().skip(start).position(|&v| v == b' ').map(|pos| pos + start);
-    let nl = raw.iter().skip(start).position(|&v| v == b'\n').map(|pos| pos + start);
-    
+    let spc = raw
+        .iter()
+        .skip(start)
+        .position(|&v| v == b' ')
+        .map(|pos| pos + start);
+    let nl = raw
+        .iter()
+        .skip(start)
+        .position(|&v| v == b'\n')
+        .map(|pos| pos + start);
+
     if spc.is_none() || nl < spc {
-        dct.insert(b"None".to_vec(), vec!(Vec::from(raw.split_at(start + 1).1)));
-        return dct
+        dct.insert(b"None".to_vec(), vec![Vec::from(raw.split_at(start + 1).1)]);
+        return dct;
     }
-    
+
     let spc = spc.unwrap();
     let key = &raw[start..spc];
 
     let mut end = start;
     loop {
-        match raw.iter().skip(end + 1).position(|&v| v == b'\n').map(|pos| pos + end + 1) {
+        match raw
+            .iter()
+            .skip(end + 1)
+            .position(|&v| v == b'\n')
+            .map(|pos| pos + end + 1)
+        {
             None => break,
             Some(v) => {
                 end = v;
@@ -31,7 +48,7 @@ pub fn kvlm_parse<'a>(raw: &'a [u8], start: Option<usize>, dct: Option<OrderMap<
         }
     }
 
-    let slice:&[u8] = &raw[spc+1..end];
+    let slice: &[u8] = &raw[spc + 1..end];
     let data = slice
         .chunks(2)
         .flat_map(|chunk| {
@@ -40,7 +57,9 @@ pub fn kvlm_parse<'a>(raw: &'a [u8], start: Option<usize>, dct: Option<OrderMap<
             } else {
                 chunk.iter().copied()
             }
-        }).collect::<Vec<u8>>().to_owned();
+        })
+        .collect::<Vec<u8>>()
+        .to_owned();
 
     if let Some(existing) = dct.get_mut(key) {
         existing.push(data);
@@ -48,15 +67,16 @@ pub fn kvlm_parse<'a>(raw: &'a [u8], start: Option<usize>, dct: Option<OrderMap<
         dct.insert(key.to_vec(), vec![data]);
     }
 
-    kvlm_parse(raw,Some(end+1),Some(dct))
+    kvlm_parse(raw, Some(end + 1), Some(dct))
 }
-
 
 pub fn kvlm_serialize(kvlm: &OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState>) -> String {
     let mut ret = String::new();
 
     for (key, values) in kvlm.iter() {
-        if key == b"None" { continue }
+        if key == b"None" {
+            continue;
+        }
         // Convert key to a String
         if let Ok(key_str) = String::from_utf8(key.clone()) {
             for value in values {

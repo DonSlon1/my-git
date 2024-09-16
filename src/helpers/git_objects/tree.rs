@@ -1,30 +1,34 @@
+use crate::helpers::git::GitRepo;
+use crate::helpers::git_objects::git_object::{AsAny, GitObject};
+use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
 use std::any::Any;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
 use std::ops::Add;
 use std::path::{Path, PathBuf};
-use crate::helpers::git::GitRepo;
-use crate::helpers::git_objects::git_object::{AsAny, GitObject};
-use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
 
 #[derive(Debug, Clone)]
 pub struct GitTree {
     fmt: Vec<u8>,
     data: Vec<u8>,
-    leafs: Vec<GitTreeLeaf>
+    leafs: Vec<GitTreeLeaf>,
 }
 
 impl GitTree {
-    pub fn new(data:Vec<u8>,leafs:Vec<GitTreeLeaf>) -> Self {
-        GitTree { fmt: b"tree".to_vec(), data,leafs}
+    pub fn new(data: Vec<u8>, leafs: Vec<GitTreeLeaf>) -> Self {
+        GitTree {
+            fmt: b"tree".to_vec(),
+            data,
+            leafs,
+        }
     }
     pub fn from_raw(raw: &[u8]) -> Self {
-        let mut pos:usize = 0;
+        let mut pos: usize = 0;
         let max = raw.len();
         let mut leafs = Vec::new();
         while pos < max {
-            match GitTreeLeaf::new_from_raw(raw,Some(pos)) {
+            match GitTreeLeaf::new_from_raw(raw, Some(pos)) {
                 None => {}
                 Some(value) => {
                     pos = value.0;
@@ -32,14 +36,14 @@ impl GitTree {
                 }
             }
         }
-        Self::new(raw.to_vec(),leafs)
+        Self::new(raw.to_vec(), leafs)
     }
 }
 
 impl GitObject for GitTree {
     fn serialize(&self) -> String {
         let mut leafs = self.leafs.clone();
-        leafs.sort_by(|a,b| a.clone().sort_keys().cmp(&b.clone().sort_keys()));
+        leafs.sort_by(|a, b| a.clone().sort_keys().cmp(&b.clone().sort_keys()));
         let mut output = String::new();
         for leaf in leafs {
             output.push_str(&*leaf.mode);
@@ -56,7 +60,7 @@ impl GitObject for GitTree {
     fn data(&self) -> Vec<u8> {
         self.data.clone()
     }
-    
+
     fn deserialize(&self) -> Vec<u8> {
         self.data.clone()
     }
@@ -66,14 +70,15 @@ impl GitObject for GitTree {
     }
 }
 
-
 impl GitRepo {
     pub fn ls_tree(&self, tree: &String, recursive: &bool, prefix: Option<String>) {
-        let sha = self.obj_file(tree.clone(),"tree".to_string(),None);
+        let sha = self.obj_file(tree.clone(), "tree".to_string(), None);
         let prefix = prefix.unwrap_or("".to_string());
         let obj = match self.object_read(sha) {
-            Ok(v) => {v}
-            Err(_) => {return;}
+            Ok(v) => v,
+            Err(_) => {
+                return;
+            }
         };
         let obj = match obj.as_ref().as_any().downcast_ref::<GitTree>() {
             None => {
@@ -84,19 +89,19 @@ impl GitRepo {
         };
         for leaf in obj.leafs {
             let mut mode_type;
-            if leaf.mode.len() == 5  {
-                mode_type = &leaf.mode[0..1]; 
-            } else { 
+            if leaf.mode.len() == 5 {
+                mode_type = &leaf.mode[0..1];
+            } else {
                 mode_type = &leaf.mode[0..2];
             }
-            
-            match mode_type { 
-                "04" => {mode_type = "tree"},
-                "10" => {mode_type = "blob"},
-                "12" => {mode_type = "blob"},
-                "16" => {mode_type = "commit"},
+
+            match mode_type {
+                "04" => mode_type = "tree",
+                "10" => mode_type = "blob",
+                "12" => mode_type = "blob",
+                "16" => mode_type = "commit",
                 _ => {
-                    println!("Unsoported leaf type: {}",leaf.mode)
+                    println!("Unsoported leaf type: {}", leaf.mode)
                 }
             }
             if !(*recursive && mode_type == "tree") {
@@ -111,7 +116,6 @@ impl GitRepo {
                 let new_prefix = Path::new(&prefix).join(&leaf.path).display().to_string();
                 self.ls_tree(&leaf.sha, recursive, Some(new_prefix));
             }
-            
         }
     }
     pub fn tree_checkout(&self, tree: Box<dyn GitObject>, path: PathBuf) {
@@ -120,16 +124,16 @@ impl GitRepo {
                 eprintln!("Tree obj is not a tree");
                 return;
             }
-            Some(v) => v.clone()
+            Some(v) => v.clone(),
         };
         for leaf in tree.leafs {
             let obj = self.object_read(leaf.sha).unwrap();
             let mut dest = path.clone();
             dest.push(leaf.path);
-            
-            if obj.format() == b"tree".to_vec() { 
+
+            if obj.format() == b"tree".to_vec() {
                 std::fs::create_dir_all(dest.clone()).unwrap();
-                self.tree_checkout(obj,dest)
+                self.tree_checkout(obj, dest)
             } else if obj.format() == b"blob".to_vec() {
                 let mut file = File::create(dest).unwrap();
                 file.write_all(&*obj.data()).unwrap();

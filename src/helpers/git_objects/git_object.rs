@@ -1,24 +1,23 @@
-use std::any::Any;
-use std::fmt::Debug;
-use std::io::Read;
-use std::path::PathBuf;
 use crate::helpers::git::GitRepo;
-use std::str::FromStr;
-use clap::ValueEnum;
-use sha1::Digest;
 use crate::helpers::git_objects::blob::GitBlob;
 use crate::helpers::git_objects::commit::GitCommit;
 use crate::helpers::git_objects::tag::GitTag;
 use crate::helpers::git_objects::tree::GitTree;
+use clap::ValueEnum;
+use sha1::Digest;
+use std::any::Any;
+use std::fmt::Debug;
+use std::io::Read;
+use std::path::PathBuf;
+use std::str::FromStr;
 
-
-#[derive(Clone,ValueEnum)]
+#[derive(Clone, ValueEnum)]
 #[repr(u8)]
 pub enum ObjectType {
     Blob,
     Tree,
     Commit,
-    Tag
+    Tag,
 }
 
 impl ObjectType {
@@ -27,7 +26,7 @@ impl ObjectType {
             ObjectType::Blob => b"blob",
             ObjectType::Tree => b"tree",
             ObjectType::Commit => b"commit",
-            ObjectType::Tag => b"tag"
+            ObjectType::Tag => b"tag",
         }
     }
 }
@@ -38,7 +37,7 @@ impl ToString for ObjectType {
             ObjectType::Blob => "blob".to_string(),
             ObjectType::Tree => "tree".to_string(),
             ObjectType::Commit => "commit".to_string(),
-            ObjectType::Tag => "tag".to_string()
+            ObjectType::Tag => "tag".to_string(),
         }
     }
 }
@@ -47,12 +46,12 @@ impl FromStr for ObjectType {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s { 
+        match s {
             "blob" => Ok(ObjectType::Blob),
             "tree" => Ok(ObjectType::Tree),
             "commit" => Ok(ObjectType::Commit),
             "tag" => Ok(ObjectType::Tag),
-            e => Err(format!("Invalid object type: {}",e))
+            e => Err(format!("Invalid object type: {}", e)),
         }
     }
 }
@@ -62,9 +61,9 @@ impl GitObjectFactory {
     pub fn new(object_type: ObjectType, data: Vec<u8>) -> Box<dyn GitObject> {
         match object_type {
             ObjectType::Blob => Box::new(GitBlob::new(data)),
-            ObjectType::Tree => Box::new(GitTree::new(data,vec![])),
+            ObjectType::Tree => Box::new(GitTree::new(data, vec![])),
             ObjectType::Commit => Box::new(GitCommit::new(data)),
-            ObjectType::Tag => Box::new(GitTag::new(data)) 
+            ObjectType::Tag => Box::new(GitTag::new(data)),
         }
     }
 }
@@ -86,18 +85,17 @@ impl<T: Any> AsAny for T {
     }
 }
 
-
 impl GitRepo {
     /// Read object sha from Git repository repo.  Return a
     /// GitObject whose exact type depends on the object.
-    pub fn object_read(&self, sha: String) -> Result<Box<dyn GitObject>,String> {
+    pub fn object_read(&self, sha: String) -> Result<Box<dyn GitObject>, String> {
         let sha_split = sha.split_at(2);
         let path = self.repo_file(format!("objects/{}/{}", sha_split.0, sha_split.1), false)?;
-        
-        if !path.is_file() { 
-            return Err(format!("Path: {:?} is not a file",path))
+
+        if !path.is_file() {
+            return Err(format!("Path: {:?} is not a file", path));
         }
-        
+
         let data = match std::fs::read(path) {
             Ok(v) => v,
             Err(e) => {
@@ -127,15 +125,9 @@ impl GitRepo {
                 let data = &raw[y + 1..];
 
                 let object: Box<dyn GitObject> = match fmt {
-                    b"commit" => {
-                        Box::new(GitCommit::new(Vec::from(data)))
-                    }
-                    b"tree" => {
-                        Box::new(GitTree::from_raw(data))
-                    }
-                    b"tag" => {
-                        Box::new(GitTag::new(Vec::from(data)))
-                    }
+                    b"commit" => Box::new(GitCommit::new(Vec::from(data))),
+                    b"tree" => Box::new(GitTree::from_raw(data)),
+                    b"tag" => Box::new(GitTag::new(Vec::from(data))),
                     b"blob" => Box::new(GitBlob::new(Vec::from(data))),
                     _ => {
                         return Err(format!(
@@ -153,8 +145,11 @@ impl GitRepo {
             Err("Space not found".into())
         }
     }
-    
-    pub fn object_write(repo: Option<GitRepo>,object: Box<dyn GitObject>) -> Result<String,String> {
+
+    pub fn object_write(
+        repo: Option<GitRepo>,
+        object: Box<dyn GitObject>,
+    ) -> Result<String, String> {
         let data = object.serialize();
         let size_str = data.len().to_string();
         let size_bytes = size_str.as_bytes();
@@ -165,14 +160,13 @@ impl GitRepo {
         result.extend_from_slice(size_bytes);
         result.push(b'\x00');
         result.extend_from_slice(data.as_ref());
-        
+
         let mut hasher = sha1::Sha1::new();
-        let data : &[u8] = &*result;
+        let data: &[u8] = &*result;
         Digest::update(&mut hasher, data);
         let hash = hasher.finalize();
-        let sha:String  = hash.iter().map(|b| format!("{:02x}", b)).collect();
+        let sha: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
         if let Some(repo) = repo {
-
             // write data to file
             let split_sha = sha.split_at(2);
             let path = repo.repo_file(format!("objects/{}/{}", split_sha.0, split_sha.1), true)?;
@@ -191,22 +185,26 @@ impl GitRepo {
 
         Ok(sha)
     }
-    
-    pub fn cat_file(&self, object:String, object_type: ObjectType) -> Result<Vec<u8>,String> {
-        let data = self.object_read(self.obj_file(object.clone(), object_type.to_string(), None))?;
+
+    pub fn cat_file(&self, object: String, object_type: ObjectType) -> Result<Vec<u8>, String> {
+        let data =
+            self.object_read(self.obj_file(object.clone(), object_type.to_string(), None))?;
         let serialized_data = data.serialize();
-        
-        
+
         Ok(data.data())
     }
-    
-    pub fn obj_file(&self,object: String, _fmt: String, _follow: Option<bool>) -> String {
+
+    pub fn obj_file(&self, object: String, _fmt: String, _follow: Option<bool>) -> String {
         object
     }
-    
-    pub fn hash_obj(repo: Option<GitRepo>, path: PathBuf, fmt: ObjectType) -> Result<String,String> {
+
+    pub fn hash_obj(
+        repo: Option<GitRepo>,
+        path: PathBuf,
+        fmt: ObjectType,
+    ) -> Result<String, String> {
         let data = std::fs::read(path).map_err(|e| e.to_string())?;
-        let obj: Box<dyn GitObject> = GitObjectFactory::new(fmt,data);
-        GitRepo::object_write(repo,obj)
+        let obj: Box<dyn GitObject> = GitObjectFactory::new(fmt, data);
+        GitRepo::object_write(repo, obj)
     }
 }

@@ -1,9 +1,9 @@
 mod commands;
 pub mod helpers;
-use clap::{Parser, Subcommand};
-use commands::commands::{add, cat_file, init, hash_obj,log};
-use helpers::git_objects::git_object::ObjectType;
 use crate::commands::commands::{checkout, ls_tree, show_ref};
+use clap::{Parser, Subcommand};
+use commands::commands::{add, cat_file, hash_obj, init, log};
+use helpers::git_objects::git_object::ObjectType;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -26,7 +26,7 @@ enum Commands {
     Checkout {
         commit: String,
         #[clap(default_value_t = helpers::file::get_exe_dir())]
-        path: String
+        path: String,
     },
     Commit {
         #[clap(default_value_t = helpers::file::get_exe_dir())]
@@ -38,7 +38,7 @@ enum Commands {
     },
     CatFile {
         object_type: ObjectType,
-        object: String
+        object: String,
     },
     HashObject {
         path: String,
@@ -48,22 +48,22 @@ enum Commands {
         object_type: ObjectType,
     },
     Log {
-        #[clap(default_value="HEAD")]
-        commit: String
+        #[clap(default_value = "HEAD")]
+        commit: String,
     },
     LsTree {
         #[clap(short)]
         recursive: bool,
-        tree: String
+        tree: String,
     },
     Tag {
         name: String,
-        #[clap(short='a')]
+        #[clap(short = 'a')]
         create: bool,
-        #[clap(default_value="HEAD")]
-        object: String
+        #[clap(default_value = "HEAD")]
+        object: String,
     },
-    ShowRef
+    ShowRef,
 }
 
 fn main() {
@@ -77,7 +77,7 @@ fn main() {
             init(path.clone());
         }
         Commands::Checkout { commit, path } => {
-            checkout(commit.clone(),path.into());
+            checkout(commit.clone(), path.into());
         }
         Commands::Commit { path: _path } => {
             println!("'myapp commit' was used");
@@ -85,21 +85,26 @@ fn main() {
         Commands::Rm { path: _path } => {
             println!("'myapp rm' was used");
         }
-        Commands::CatFile { object_type,object } => {
-            cat_file(object_type,object);
-        },
-        Commands::HashObject { object_type, path, write } => {
-            hash_obj(object_type,path,write)
-        },
-        Commands::Log { commit} =>{
+        Commands::CatFile {
+            object_type,
+            object,
+        } => {
+            cat_file(object_type, object);
+        }
+        Commands::HashObject {
+            object_type,
+            path,
+            write,
+        } => hash_obj(object_type, path, write),
+        Commands::Log { commit } => {
             log(commit.clone());
-        },
-        Commands::LsTree { recursive, tree } => {
-            ls_tree(recursive,tree)
         }
-        Commands::Tag { .. } => {}
-        Commands::ShowRef => {
-            show_ref()
-        }
+        Commands::LsTree { recursive, tree } => ls_tree(recursive, tree),
+        Commands::Tag {
+            name,
+            create,
+            object,
+        } => {}
+        Commands::ShowRef => show_ref(),
     }
 }

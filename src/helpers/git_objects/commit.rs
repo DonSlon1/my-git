@@ -1,14 +1,14 @@
-use std::any::Any;
-use std::hash::RandomState;
-use ordermap::OrderMap;
 use crate::helpers::git_objects::git_object::GitObject;
 use crate::helpers::kvlm::{kvlm_parse, kvlm_serialize};
+use ordermap::OrderMap;
+use std::any::Any;
+use std::hash::RandomState;
 
 #[derive(Debug, Clone)]
 pub struct GitCommit {
     fmt: Vec<u8>,
     data: Vec<u8>,
-    pub kvlm: OrderMap<Vec<u8>,Vec<Vec<u8>>,RandomState>
+    pub kvlm: OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState>,
 }
 
 impl GitCommit {
@@ -16,7 +16,8 @@ impl GitCommit {
         let borrowed_kvlm = kvlm_parse(&data, None, None);
 
         // Convert borrowed OrderMap to owned OrderMap
-        let kvlm: OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState> = borrowed_kvlm.into_iter()
+        let kvlm: OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState> = borrowed_kvlm
+            .into_iter()
             .map(|(k, v)| (k.to_vec(), v))
             .collect();
         GitCommit {
@@ -35,7 +36,7 @@ impl GitObject for GitCommit {
     fn data(&self) -> Vec<u8> {
         self.data.clone()
     }
-    
+
     fn deserialize(&self) -> Vec<u8> {
         self.data.clone()
     }
@@ -43,5 +44,4 @@ impl GitObject for GitCommit {
     fn format(&self) -> Vec<u8> {
         self.fmt.clone()
     }
-
 }
