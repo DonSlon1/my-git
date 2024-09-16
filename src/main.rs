@@ -62,8 +62,8 @@ enum Commands {
         create: bool,
         #[clap(default_value = "HEAD")]
         object: String,
-        #[clap(short,long)]
-        message: Option<String>
+        #[clap(short, long)]
+        message: Option<String>,
     },
     ShowRef,
 }
@@ -107,9 +107,7 @@ fn main() {
             create,
             object,
             message,
-        } => {
-            tag(name,create,object,message)
-        }
+        } => tag(name, create, object, message),
         Commands::ShowRef => show_ref(),
     }
 }

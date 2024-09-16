@@ -72,7 +72,9 @@ impl GitObject for GitTree {
 
 impl GitRepo {
     pub fn ls_tree(&self, tree: &String, recursive: &bool, prefix: Option<String>) {
-        let sha = self.obj_file(tree.clone(), "tree".to_string(), None);
+        let sha = self
+            .obj_find(tree.clone(), Some("tree".to_string()), None)
+            .unwrap();
         let prefix = prefix.unwrap_or("".to_string());
         let obj = match self.object_read(sha) {
             Ok(v) => v,

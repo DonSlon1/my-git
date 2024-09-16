@@ -29,8 +29,8 @@ impl GitTag {
                 .into_iter()
                 .map(|(k, v)| (k.to_vec(), v))
                 .collect();
-        } else { 
-           kvlm = OrderMap::new(); 
+        } else {
+            kvlm = OrderMap::new();
         }
         GitTag {
             fmt: b"tag".to_vec(),
@@ -60,6 +60,10 @@ impl GitObject for GitTag {
 
 impl GitRepo {
     pub fn ref_resolve(&self, path: PathBuf) -> Option<String> {
+        let path = match self.repo_file(path.into_os_string().to_str()?.to_string(), false) {
+            Ok(v) => v,
+            Err(_) => return None,
+        };
         if !path.is_file() {
             return None;
         }
@@ -105,25 +109,39 @@ impl GitRepo {
         Ok(ret)
     }
 
-    pub fn create_tag(&self, name: &String, reference: String, create_tag_object: bool, message: Option<&String>) {
-        let sha = self.obj_file(reference,"tags".to_string(),None);
-        
-        if !create_tag_object { 
-            self.ref_create(&"tags/".to_string().add(name),&sha);
+    pub fn create_tag(
+        &self,
+        name: &String,
+        reference: String,
+        create_tag_object: bool,
+        message: Option<&String>,
+    ) {
+        let sha = self
+            .obj_find(reference, Some("tags".to_string()), None)
+            .unwrap();
+
+        if !create_tag_object {
+            self.ref_create(&"tags/".to_string().add(name), &sha);
             return;
         }
-        
+
         let mut tag = GitTag::new(vec![]);
-        tag.kvlm = OrderMap::new(); 
-        tag.kvlm.insert(b"object".to_vec(),vec![sha.as_bytes().to_vec()]);
-        tag.kvlm.insert(b"type".to_vec(),vec![b"commit".to_vec()]);
-        tag.kvlm.insert(b"tag".to_vec(),vec![name.as_bytes().to_vec()]);
-        tag.kvlm.insert(b"tagger".to_vec(),vec![b"Wyag <wyag@example.com>".to_vec()]);
+        tag.kvlm = OrderMap::new();
+        tag.kvlm
+            .insert(b"object".to_vec(), vec![sha.as_bytes().to_vec()]);
+        tag.kvlm.insert(b"type".to_vec(), vec![b"commit".to_vec()]);
+        tag.kvlm
+            .insert(b"tag".to_vec(), vec![name.as_bytes().to_vec()]);
+        tag.kvlm.insert(
+            b"tagger".to_vec(),
+            vec![b"Wyag <wyag@example.com>".to_vec()],
+        );
         if let Some(message) = message {
-            tag.kvlm.insert(b"None".to_vec(),vec![message.as_bytes().to_vec()]);
+            tag.kvlm
+                .insert(b"None".to_vec(), vec![message.as_bytes().to_vec()]);
         }
         let tag_sha = GitRepo::object_write(Some(self), Box::new(tag)).unwrap();
-        self.ref_create(&"/tags/".to_string().add(name),&tag_sha);
+        self.ref_create(&"/tags/".to_string().add(name), &tag_sha);
     }
 
     pub fn ref_create(&self, ref_name: &String, sha: &String) {

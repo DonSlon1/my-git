@@ -5,11 +5,11 @@ use crate::helpers::git_objects::git_object::{AsAny, ObjectType};
 use crate::helpers::git_objects::tree::GitTree;
 use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
 use crate::helpers::kvlm::kvlm_parse;
+use crate::helpers::pager::display_with_pager;
 use std::collections::HashSet;
 use std::io::{Stdin, Write};
 use std::path::PathBuf;
 use std::process::Stdio;
-use crate::helpers::pager::display_with_pager;
 
 pub fn init(path: String) {
     let r = create_new_my_git(path.into());
@@ -75,7 +75,11 @@ pub fn log(commit: String) {
         }
         Some(v) => {
             let mut data = "".to_string();
-            v.log(commit, &mut HashSet::new(), &mut data);
+            v.log(
+                v.obj_find(commit, None, None).unwrap(),
+                &mut HashSet::new(),
+                &mut data,
+            );
             let pager = std::env::var("PAGER").unwrap_or_else(|_| "less".to_string());
 
             let mut child = std::process::Command::new(&pager)
@@ -170,12 +174,16 @@ pub fn show_ref() {
     }
 }
 
-
 pub fn tag(name: &Option<String>, create: &bool, object: &String, message: &Option<String>) {
     let repo = GitRepo::repo_find(".".into()).unwrap();
     match name {
         None => {
-            let ref_list = repo.ref_list(Some(repo.repo_dir("refs/tags".to_string(),true).unwrap()), "refs".to_string()).unwrap();
+            let ref_list = repo
+                .ref_list(
+                    Some(repo.repo_dir("refs/tags".to_string(), true).unwrap()),
+                    "refs".to_string(),
+                )
+                .unwrap();
             let mut tags = String::new();
             for (key, _value) in ref_list {
                 let key: Vec<_> = key.rsplit('/').collect();
@@ -185,8 +193,11 @@ pub fn tag(name: &Option<String>, create: &bool, object: &String, message: &Opti
             }
             display_with_pager(&*tags)
         }
-        Some(name) => {
-            repo.create_tag(name, object.clone(), create.clone(), message.clone().as_ref())
-        }
+        Some(name) => repo.create_tag(
+            name,
+            object.clone(),
+            create.clone(),
+            message.clone().as_ref(),
+        ),
     }
 }

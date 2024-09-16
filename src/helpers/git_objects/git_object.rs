@@ -4,10 +4,13 @@ use crate::helpers::git_objects::commit::GitCommit;
 use crate::helpers::git_objects::tag::GitTag;
 use crate::helpers::git_objects::tree::GitTree;
 use clap::ValueEnum;
+use regex::Regex;
+use sha1::digest::consts::True;
 use sha1::Digest;
 use std::any::Any;
 use std::fmt::Debug;
 use std::io::Read;
+use std::ops::Add;
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -187,15 +190,78 @@ impl GitRepo {
     }
 
     pub fn cat_file(&self, object: String, object_type: ObjectType) -> Result<Vec<u8>, String> {
-        let data =
-            self.object_read(self.obj_file(object.clone(), object_type.to_string(), None))?;
-        let serialized_data = data.serialize();
+        let data = self.object_read(
+            self.obj_find(object.clone(), Some(object_type.to_string()), None)
+                .unwrap(),
+        )?;
 
         Ok(data.data())
     }
 
-    pub fn obj_file(&self, object: String, _fmt: String, _follow: Option<bool>) -> String {
-        object
+    pub fn obj_find(
+        &self,
+        object: String,
+        fmt: Option<String>,
+        follow: Option<bool>,
+    ) -> Result<String, String> {
+        let sha = self.object_resolve(object.clone()).unwrap_or(Vec::new());
+        if sha.len() == 0 {
+            return Err("None object find".to_string());
+        }
+        if sha.len() > 1 {
+            let candidates = sha.join("\n - ");
+            return Err(format!(
+                "Ambiguous reference {}: Candidates are:\n - {}.",
+                object, candidates
+            ));
+        }
+        let mut sha = sha.first().unwrap().clone();
+        let fmt = match fmt {
+            None => {
+                return Ok(sha.to_owned());
+            }
+            Some(v) => v,
+        };
+        let follow = follow.unwrap_or(true);
+        loop {
+            // Simulate object_read function
+            let obj = self.object_read(sha.clone())?;
+
+            // Check the format
+            if obj.format() == fmt.as_bytes().to_vec() {
+                return Ok(sha.clone());
+            }
+
+            if !follow {
+                return Err("Follow not enabled, returning None.".to_string());
+            }
+
+            // Follow tags or commit trees
+            if obj.format() == b"tag" {
+                let obj = match obj.as_ref().as_any().downcast_ref::<GitTag>() {
+                    None => return Err("Error in obj".to_string()),
+                    Some(v) => v,
+                };
+                if let Some(object_sha) = obj.kvlm.get(&b"object".to_vec().to_owned()) {
+                    let object_sha = object_sha.to_owned();
+                    sha = String::from_utf8(object_sha.first().unwrap().clone()).unwrap();
+                } else {
+                    return Err("Tag does not contain an object reference.".to_string());
+                }
+            } else if obj.format() == b"commit" && fmt.as_bytes() == b"tree" {
+                let obj = match obj.as_ref().as_any().downcast_ref::<GitCommit>() {
+                    None => return Err("Error in obj".to_string()),
+                    Some(v) => v,
+                };
+                if let Some(tree_sha) = obj.kvlm.get(&b"tree".to_vec().to_owned()) {
+                    sha = String::from_utf8(tree_sha.first().unwrap().clone()).unwrap();
+                } else {
+                    return Err("Commit does not contain a tree reference.".to_string());
+                }
+            } else {
+                return Err("No matching format found, returning None.".to_string());
+            }
+        }
     }
 
     pub fn hash_obj(
@@ -206,5 +272,44 @@ impl GitRepo {
         let data = std::fs::read(path).map_err(|e| e.to_string())?;
         let obj: Box<dyn GitObject> = GitObjectFactory::new(fmt, data);
         GitRepo::object_write(repo, obj)
+    }
+
+    pub fn object_resolve(&self, name: String) -> Option<Vec<String>> {
+        if name == "HEAD" {
+            return Some(vec![self.ref_resolve("HEAD".into()).unwrap()]);
+        }
+
+        let mut candidates: Vec<String> = Vec::new();
+        let hash_re = Regex::new(r"^[0-9A-Fa-f]{4,40}$").unwrap();
+
+        if hash_re.is_match(&*name) {
+            let name = name.to_lowercase();
+            let prefix = &name[0..2];
+            match self.repo_dir("objects/".to_string().add(prefix).into(), false) {
+                Ok(path) => {
+                    let rem = &name[2..];
+                    for f in std::fs::read_dir(path).unwrap() {
+                        let f = f.unwrap();
+                        let file_name = f.file_name();
+                        let name = file_name.to_string_lossy();
+                        if name.starts_with(rem) {
+                            candidates.push(prefix.to_string().add(&name))
+                        }
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+
+        let as_tag = self.ref_resolve("refs/tags/".to_string().add(&*name).into());
+        if let Some(tag) = as_tag {
+            candidates.push(tag);
+        }
+
+        let as_branch = self.ref_resolve("refs/heads/".to_string().add(&*name).into());
+        if let Some(branch) = as_branch {
+            candidates.push(branch)
+        }
+        Some(candidates)
     }
 }
