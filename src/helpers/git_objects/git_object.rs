@@ -147,7 +147,7 @@ impl GitRepo {
     }
 
     pub fn object_write(
-        repo: Option<GitRepo>,
+        repo: Option<&GitRepo>,
         object: Box<dyn GitObject>,
     ) -> Result<String, String> {
         let data = object.serialize();
@@ -199,7 +199,7 @@ impl GitRepo {
     }
 
     pub fn hash_obj(
-        repo: Option<GitRepo>,
+        repo: Option<&GitRepo>,
         path: PathBuf,
         fmt: ObjectType,
     ) -> Result<String, String> {

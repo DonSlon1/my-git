@@ -1,6 +1,6 @@
 mod commands;
 pub mod helpers;
-use crate::commands::commands::{checkout, ls_tree, show_ref};
+use crate::commands::commands::{checkout, ls_tree, show_ref, tag};
 use clap::{Parser, Subcommand};
 use commands::commands::{add, cat_file, hash_obj, init, log};
 use helpers::git_objects::git_object::ObjectType;
@@ -57,11 +57,13 @@ enum Commands {
         tree: String,
     },
     Tag {
-        name: String,
+        name: Option<String>,
         #[clap(short = 'a')]
         create: bool,
         #[clap(default_value = "HEAD")]
         object: String,
+        #[clap(short,long)]
+        message: Option<String>
     },
     ShowRef,
 }
@@ -104,7 +106,10 @@ fn main() {
             name,
             create,
             object,
-        } => {}
+            message,
+        } => {
+            tag(name,create,object,message)
+        }
         Commands::ShowRef => show_ref(),
     }
 }

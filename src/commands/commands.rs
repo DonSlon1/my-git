@@ -9,6 +9,7 @@ use std::collections::HashSet;
 use std::io::{Stdin, Write};
 use std::path::PathBuf;
 use std::process::Stdio;
+use crate::helpers::pager::display_with_pager;
 
 pub fn init(path: String) {
     let r = create_new_my_git(path.into());
@@ -59,7 +60,7 @@ pub fn hash_obj(object_type: &ObjectType, path: &String, write: &bool) {
         true => GitRepo::repo_find(".".into()),
         false => None,
     };
-    let sha = GitRepo::hash_obj(repo, path.into(), object_type.clone());
+    let sha = GitRepo::hash_obj(repo.as_ref(), path.into(), object_type.clone());
     match sha {
         Ok(v) => println!("{}", v),
         Err(e) => eprintln!("{}", e),
@@ -166,5 +167,26 @@ pub fn show_ref() {
     let ref_list = repo.ref_list(None, "refs".to_string()).unwrap();
     for (key, value) in ref_list {
         println!("{} {}", value, key);
+    }
+}
+
+
+pub fn tag(name: &Option<String>, create: &bool, object: &String, message: &Option<String>) {
+    let repo = GitRepo::repo_find(".".into()).unwrap();
+    match name {
+        None => {
+            let ref_list = repo.ref_list(Some(repo.repo_dir("refs/tags".to_string(),true).unwrap()), "refs".to_string()).unwrap();
+            let mut tags = String::new();
+            for (key, _value) in ref_list {
+                let key: Vec<_> = key.rsplit('/').collect();
+                if let Some(key) = key.first() {
+                    tags.push_str(&format!("{}\n", key));
+                }
+            }
+            display_with_pager(&*tags)
+        }
+        Some(name) => {
+            repo.create_tag(name, object.clone(), create.clone(), message.clone().as_ref())
+        }
     }
 }

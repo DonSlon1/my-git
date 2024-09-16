@@ -7,7 +7,7 @@ use configparser::ini::Ini;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct GitRepo {
     pub work_dir: PathBuf,
     pub git_dir: PathBuf,

@@ -20,13 +20,18 @@ pub struct GitTag {
 
 impl GitTag {
     pub fn new(data: Vec<u8>) -> Self {
-        let borrowed_kvlm = kvlm_parse(&data, None, None);
+        let mut kvlm;
+        if data.len() > 0 {
+            let borrowed_kvlm = kvlm_parse(&data, None, None);
 
-        // Convert borrowed OrderMap to owned OrderMap
-        let kvlm: OrderMap<Vec<u8>, Vec<Vec<u8>>, RandomState> = borrowed_kvlm
-            .into_iter()
-            .map(|(k, v)| (k.to_vec(), v))
-            .collect();
+            // Convert borrowed OrderMap to owned OrderMap
+            kvlm = borrowed_kvlm
+                .into_iter()
+                .map(|(k, v)| (k.to_vec(), v))
+                .collect();
+        } else { 
+           kvlm = OrderMap::new(); 
+        }
         GitTag {
             fmt: b"tag".to_vec(),
             data,
@@ -100,7 +105,26 @@ impl GitRepo {
         Ok(ret)
     }
 
-    pub fn create_tag(&self, name: &String, create_tag_object: bool) {}
+    pub fn create_tag(&self, name: &String, reference: String, create_tag_object: bool, message: Option<&String>) {
+        let sha = self.obj_file(reference,"tags".to_string(),None);
+        
+        if !create_tag_object { 
+            self.ref_create(&"tags/".to_string().add(name),&sha);
+            return;
+        }
+        
+        let mut tag = GitTag::new(vec![]);
+        tag.kvlm = OrderMap::new(); 
+        tag.kvlm.insert(b"object".to_vec(),vec![sha.as_bytes().to_vec()]);
+        tag.kvlm.insert(b"type".to_vec(),vec![b"commit".to_vec()]);
+        tag.kvlm.insert(b"tag".to_vec(),vec![name.as_bytes().to_vec()]);
+        tag.kvlm.insert(b"tagger".to_vec(),vec![b"Wyag <wyag@example.com>".to_vec()]);
+        if let Some(message) = message {
+            tag.kvlm.insert(b"None".to_vec(),vec![message.as_bytes().to_vec()]);
+        }
+        let tag_sha = GitRepo::object_write(Some(self), Box::new(tag)).unwrap();
+        self.ref_create(&"/tags/".to_string().add(name),&tag_sha);
+    }
 
     pub fn ref_create(&self, ref_name: &String, sha: &String) {
         let path = self
