@@ -29,16 +29,7 @@ pub fn add(path: String) {
     match git_repo {
         None => {}
         Some(v) => {
-            let e = v.object_read(String::from("dd1cb88b72c47bfd55e6fa51cff67f75550bd735"));
-            match e {
-                Ok(ob) => {
-                    println!("{:?}", GitTree::from_raw(&*ob.data()));
-                }
-
-                Err(e) => {
-                    println!("{}", e.to_string())
-                }
-            }
+            v.index_read();
         }
     }
 }
@@ -204,5 +195,5 @@ pub fn tag(name: &Option<String>, create: &bool, object: &String, message: &Opti
 
 pub fn rev_parse(name: &String) {
     let repo = GitRepo::repo_find(".".into()).unwrap();
-    println!("{}",repo.obj_find(name.clone(), None, Some(true)).unwrap())
+    println!("{}", repo.obj_find(name.clone(), None, Some(true)).unwrap())
 }

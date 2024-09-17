@@ -68,7 +68,7 @@ enum Commands {
     ShowRef,
     RevParse {
         name: String,
-    }
+    },
 }
 
 fn main() {
@@ -112,8 +112,6 @@ fn main() {
             message,
         } => tag(name, create, object, message),
         Commands::ShowRef => show_ref(),
-        Commands::RevParse { name } => {
-            rev_parse(name)
-        }
+        Commands::RevParse { name } => rev_parse(name),
     }
 }
