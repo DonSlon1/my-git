@@ -1,6 +1,6 @@
 mod commands;
 pub mod helpers;
-use crate::commands::commands::{checkout, ls_tree, rev_parse, show_ref, tag};
+use crate::commands::commands::{checkout, ls_files, ls_tree, rev_parse, show_ref, tag};
 use clap::{Parser, Subcommand};
 use commands::commands::{add, cat_file, hash_obj, init, log};
 use helpers::git_objects::git_object::ObjectType;
@@ -69,6 +69,10 @@ enum Commands {
     RevParse {
         name: String,
     },
+    LsFiles{
+        #[clap(short, long)]
+        verbose:bool
+    }
 }
 
 fn main() {
@@ -113,5 +117,8 @@ fn main() {
         } => tag(name, create, object, message),
         Commands::ShowRef => show_ref(),
         Commands::RevParse { name } => rev_parse(name),
+        Commands::LsFiles { verbose } => {
+            ls_files(*verbose)
+        }
     }
 }

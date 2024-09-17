@@ -4,19 +4,19 @@ use std::io::Read;
 
 #[derive(Debug)]
 pub struct GitIndexEntry {
-    ctime: (u32, u32),
-    mtime: (u32, u32),
-    dev: u32,
-    ino: u32,
-    mode_type: u16,
-    mode_perms: u16,
-    uid: u32,
-    gid: u32,
+    pub(crate) ctime: (u32, u32),
+    pub(crate) mtime: (u32, u32),
+    pub(crate) dev: u32,
+    pub(crate) ino: u32,
+    pub(crate) mode_type: u16,
+    pub(crate) mode_perms: u16,
+    pub(crate) uid: u32,
+    pub(crate) gid: u32,
     fsize: u32,
-    sha: String,
-    flag_assume_valid: bool,
-    flag_stage: u16,
-    name: String,
+    pub(crate) sha: String,
+    pub(crate) flag_assume_valid: bool,
+    pub(crate) flag_stage: u16,
+    pub(crate) name: String,
 }
 
 impl GitIndexEntry {
@@ -55,8 +55,8 @@ impl GitIndexEntry {
 
 #[derive(Debug)]
 pub struct GitIndex {
-    version: Option<u32>,
-    entries: Vec<GitIndexEntry>,
+    pub(crate) version: Option<u32>,
+    pub(crate) entries: Vec<GitIndexEntry>,
 }
 
 impl GitIndex {
@@ -148,7 +148,6 @@ impl GitRepo {
             });
         }
 
-        println!("{:?}", entries);
         GitIndex::new(Some(count), entries)
     }
 }

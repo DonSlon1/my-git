@@ -6,10 +6,13 @@ use crate::helpers::git_objects::tree::GitTree;
 use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
 use crate::helpers::kvlm::kvlm_parse;
 use crate::helpers::pager::display_with_pager;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::fs;
 use std::io::{Stdin, Write};
+use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
 use std::process::Stdio;
+use std::time::{UNIX_EPOCH, Duration};
 
 pub fn init(path: String) {
     let r = create_new_my_git(path.into());
@@ -196,4 +199,69 @@ pub fn tag(name: &Option<String>, create: &bool, object: &String, message: &Opti
 pub fn rev_parse(name: &String) {
     let repo = GitRepo::repo_find(".".into()).unwrap();
     println!("{}", repo.obj_find(name.clone(), None, Some(true)).unwrap())
+}
+
+pub fn ls_files(verbose: bool) {
+    let repo = GitRepo::repo_find(".".into()).unwrap();
+    let index = repo.index_read();
+    if verbose {
+        println!("Index file format v{}, containing {} entries.",index.version.unwrap_or(0), index.entries.len())       
+    }
+    let mode_type_map: HashMap<u16, &str> = [
+        (0b1000, "regular file"),
+        (0b1010, "symlink"),
+        (0b1110, "git link"),
+    ].iter().cloned().collect();
+
+    for e in &index.entries {
+        println!("{}", e.name);
+        if verbose {
+            if let Some(mode_type_str) = mode_type_map.get(&e.mode_type) {
+                println!("  {} with perms: {:o}", mode_type_str, e.mode_perms);
+            }
+            println!("  on blob: {}", e.sha);
+
+            let ctime = UNIX_EPOCH + Duration::new(e.ctime.0 as u64, e.ctime.1);
+            let mtime = UNIX_EPOCH + Duration::new(e.mtime.0 as u64, e.mtime.1);
+            let ctime_secs = ctime.duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
+            let mtime_secs = mtime.duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
+            println!("  created: {}.{}, modified: {}.{}",
+                     ctime_secs, e.ctime.1,
+                     mtime_secs, e.mtime.1);
+
+            println!("  device: {}, inode: {}", e.dev, e.ino);
+
+            if let Ok(user) = get_user_by_uid(e.uid) {
+                if let Ok(group) = get_group_by_gid(e.gid) {
+                    println!("  user: {} ({})  group: {} ({})", 
+                        user.name, e.uid, group.name, e.gid);
+                }
+            }
+
+            println!("  flags: stage={} assume_valid={}", 
+                e.flag_stage, e.flag_assume_valid);
+        }
+    }
+}
+
+fn get_user_by_uid(uid: u32) -> Result<User, &'static str> {
+    let user = fs::metadata(format!("/proc/self/fd/0")).map_err(|_| "Failed to get user")?;
+    Ok(User {
+        name: user.uid().to_string(),
+    })
+}
+
+fn get_group_by_gid(gid: u32) -> Result<Group, &'static str> {
+    let group = fs::metadata(format!("/proc/self/fd/0")).map_err(|_| "Failed to get group")?;
+    Ok(Group {
+        name: group.gid().to_string(),
+    })
+}
+
+struct User {
+    name: String,
+}
+
+struct Group {
+    name: String,
 }
