@@ -12,7 +12,8 @@ use std::io::{Stdin, Write};
 use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
 use std::process::Stdio;
-use std::time::{UNIX_EPOCH, Duration};
+use std::time::{Duration, UNIX_EPOCH};
+use crate::helpers::git_objects::git_ignore::GitIgnore;
 
 pub fn init(path: String) {
     let r = create_new_my_git(path.into());
@@ -205,13 +206,20 @@ pub fn ls_files(verbose: bool) {
     let repo = GitRepo::repo_find(".".into()).unwrap();
     let index = repo.index_read();
     if verbose {
-        println!("Index file format v{}, containing {} entries.",index.version.unwrap_or(0), index.entries.len())       
+        println!(
+            "Index file format v{}, containing {} entries.",
+            index.version.unwrap_or(0),
+            index.entries.len()
+        )
     }
     let mode_type_map: HashMap<u16, &str> = [
         (0b1000, "regular file"),
         (0b1010, "symlink"),
         (0b1110, "git link"),
-    ].iter().cloned().collect();
+    ]
+    .iter()
+    .cloned()
+    .collect();
 
     for e in &index.entries {
         println!("{}", e.name);
@@ -223,23 +231,44 @@ pub fn ls_files(verbose: bool) {
 
             let ctime = UNIX_EPOCH + Duration::new(e.ctime.0 as u64, e.ctime.1);
             let mtime = UNIX_EPOCH + Duration::new(e.mtime.0 as u64, e.mtime.1);
-            let ctime_secs = ctime.duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
-            let mtime_secs = mtime.duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
-            println!("  created: {}.{}, modified: {}.{}",
-                     ctime_secs, e.ctime.1,
-                     mtime_secs, e.mtime.1);
+            let ctime_secs = ctime
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_secs();
+            let mtime_secs = mtime
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_secs();
+            println!(
+                "  created: {}.{}, modified: {}.{}",
+                ctime_secs, e.ctime.1, mtime_secs, e.mtime.1
+            );
 
             println!("  device: {}, inode: {}", e.dev, e.ino);
 
             if let Ok(user) = get_user_by_uid(e.uid) {
                 if let Ok(group) = get_group_by_gid(e.gid) {
-                    println!("  user: {} ({})  group: {} ({})", 
-                        user.name, e.uid, group.name, e.gid);
+                    println!(
+                        "  user: {} ({})  group: {} ({})",
+                        user.name, e.uid, group.name, e.gid
+                    );
                 }
             }
 
-            println!("  flags: stage={} assume_valid={}", 
-                e.flag_stage, e.flag_assume_valid);
+            println!(
+                "  flags: stage={} assume_valid={}",
+                e.flag_stage, e.flag_assume_valid
+            );
+        }
+    }
+}
+
+pub fn check_git_ignore(paths: Vec<PathBuf>) {
+    let repo = GitRepo::repo_find(".".into()).unwrap();
+    let git_ignore = repo.gitignore_read();
+    for path in paths {
+        if git_ignore.check_ignore(path.clone()).unwrap() { 
+            println!("{}",path.to_str().unwrap())
         }
     }
 }
