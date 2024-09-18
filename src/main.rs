@@ -1,11 +1,13 @@
 mod commands;
 pub mod helpers;
 
-use std::path::PathBuf;
-use crate::commands::commands::{check_git_ignore, checkout, ls_files, ls_tree, rev_parse, show_ref, tag};
+use crate::commands::commands::{
+    check_git_ignore, checkout, ls_files, ls_tree, rev_parse, show_ref, status, tag,
+};
 use clap::{Parser, Subcommand};
 use commands::commands::{add, cat_file, hash_obj, init, log};
 use helpers::git_objects::git_object::ObjectType;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -76,8 +78,9 @@ enum Commands {
         verbose: bool,
     },
     CheckIgnore {
-        paths: Vec<PathBuf>
-    }
+        paths: Vec<PathBuf>,
+    },
+    Status,
 }
 
 fn main() {
@@ -123,6 +126,7 @@ fn main() {
         Commands::ShowRef => show_ref(),
         Commands::RevParse { name } => rev_parse(name),
         Commands::LsFiles { verbose } => ls_files(*verbose),
-        Commands::CheckIgnore {paths} => check_git_ignore(paths.clone())
+        Commands::CheckIgnore { paths } => check_git_ignore(paths.clone()),
+        Commands::Status => status(),
     }
 }

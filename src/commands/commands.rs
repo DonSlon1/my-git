@@ -1,6 +1,7 @@
 use crate::helpers::file::create_new_my_git;
 use crate::helpers::git::GitRepo;
 use crate::helpers::git_objects::commit::GitCommit;
+use crate::helpers::git_objects::git_ignore::GitIgnore;
 use crate::helpers::git_objects::git_object::{AsAny, ObjectType};
 use crate::helpers::git_objects::tree::GitTree;
 use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
@@ -13,7 +14,6 @@ use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::time::{Duration, UNIX_EPOCH};
-use crate::helpers::git_objects::git_ignore::GitIgnore;
 
 pub fn init(path: String) {
     let r = create_new_my_git(path.into());
@@ -267,9 +267,42 @@ pub fn check_git_ignore(paths: Vec<PathBuf>) {
     let repo = GitRepo::repo_find(".".into()).unwrap();
     let git_ignore = repo.gitignore_read();
     for path in paths {
-        if git_ignore.check_ignore(path.clone()).unwrap() { 
-            println!("{}",path.to_str().unwrap())
+        if git_ignore.check_ignore(path.clone()).unwrap() {
+            println!("{}", path.to_str().unwrap())
         }
+    }
+}
+pub fn status() {
+    let repo = GitRepo::repo_find(".".into()).unwrap();
+    let branch = repo.get_active_branch();
+    if let Some(branch) = branch {
+        println!("On branch {}.", branch);
+    } else {
+        println!(
+            "HEAD detached at {}",
+            repo.obj_find("HEAD".to_string(), None, None).unwrap()
+        )
+    }
+    
+    println!("Changes to be committed:");
+
+    let mut head = repo.to_hash_map("HEAD".to_string(),None);
+    let index = repo.index_read();
+
+    for entry in &index.entries {
+        if let Some(head_sha) = head.get(&entry.name) {
+            if !head_sha.eq(&entry.sha) {
+                println!("  modified: {}", entry.name);
+            }
+            head.remove(&entry.name);
+        } else {
+            println!("  added:    {}", entry.name);
+        }
+    }
+
+    // Remaining keys in `head` are files that have been deleted
+    for entry in head.keys() {
+        println!("  deleted:  {}", entry);
     }
 }
 

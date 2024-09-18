@@ -1,10 +1,10 @@
 use crate::helpers::git::GitRepo;
+use glob::Pattern;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Cursor, Lines};
 use std::path::{Path, PathBuf};
-use glob::Pattern;
 
 #[derive(Debug)]
 pub struct GitIgnore {
@@ -19,17 +19,20 @@ impl GitIgnore {
             scoped: HashMap::new(),
         }
     }
-    fn check_ignore_file(rules: &Vec<(String,bool)>, path: &PathBuf ) -> Option<bool> {
+    fn check_ignore_file(rules: &Vec<(String, bool)>, path: &PathBuf) -> Option<bool> {
         let mut result = None;
         for (pattern, value) in rules {
-            if let Ok(pattern) = Pattern::new(&*pattern) { 
-                if pattern.matches(path.to_str().unwrap())  {  }
+            if let Ok(pattern) = Pattern::new(&*pattern) {
+                if pattern.matches(path.to_str().unwrap()) {}
                 result = Some(value.clone());
             }
         }
         result
     }
-    fn check_ignore_scoped(rules: HashMap<String, Vec<(String, bool)>>, path: PathBuf) -> Option<bool> {
+    fn check_ignore_scoped(
+        rules: HashMap<String, Vec<(String, bool)>>,
+        path: PathBuf,
+    ) -> Option<bool> {
         let mut parent = path.parent();
 
         while let Some(p) = parent {
@@ -43,7 +46,7 @@ impl GitIgnore {
 
         None
     }
-    fn check_ignore_absolute(rules: Vec<(String,bool)>,path: PathBuf) -> bool {
+    fn check_ignore_absolute(rules: Vec<(String, bool)>, path: PathBuf) -> bool {
         for ruleset in rules {
             if let Some(result) = Self::check_ignore_file(&vec![ruleset], &path) {
                 return result;
@@ -51,16 +54,21 @@ impl GitIgnore {
         }
         false
     }
-    pub fn check_ignore(&self,path: PathBuf) -> Result<bool,String> {
+    pub fn check_ignore(&self, path: PathBuf) -> Result<bool, String> {
         if path.is_absolute() {
-            return Err("This function requires path to be relative to the repository's root".to_string());
+            return Err(
+                "This function requires path to be relative to the repository's root".to_string(),
+            );
         }
 
         if let Some(result) = GitIgnore::check_ignore_scoped(self.scoped.clone(), path.clone()) {
             return Ok(result);
         }
 
-        Ok(GitIgnore::check_ignore_absolute(self.absolute.clone(), path))
+        Ok(GitIgnore::check_ignore_absolute(
+            self.absolute.clone(),
+            path,
+        ))
     }
 }
 

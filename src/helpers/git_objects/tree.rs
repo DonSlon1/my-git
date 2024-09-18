@@ -1,11 +1,10 @@
 use crate::helpers::git::GitRepo;
-use crate::helpers::git_objects::git_object::{AsAny, GitObject};
+use crate::helpers::git_objects::git_object::{AsAny, GitObject, ObjectType};
 use crate::helpers::git_objects::tree_leaf::GitTreeLeaf;
-use std::any::Any;
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
-use std::ops::Add;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
@@ -141,5 +140,32 @@ impl GitRepo {
                 file.write_all(&*obj.data()).unwrap();
             }
         }
+    }
+    pub fn to_hash_map(&self, reference: String, prefix: Option<String>) -> HashMap<String, String> {
+        let prefix = prefix.unwrap_or("".to_string());
+        let mut ret = HashMap::new();
+        let tre_sha = match self.obj_find(reference.clone(),Some("tree".to_string()),None) {
+            Ok(v) => {v}
+            Err(_) => {return ret}
+        };
+        let git_object = self.object_read(tre_sha.clone()).unwrap();
+        let tree = match git_object.as_ref().as_any().downcast_ref::<GitTree>() {
+            None => {return ret}
+            Some(v) => v,
+        };
+
+        for leaf in tree.leafs.clone() {
+            let full_path = Path::new(&prefix).join(leaf.path.clone());
+            
+            let is_sub_tree = leaf.mode.starts_with("04");
+            if is_sub_tree { 
+                ret.extend(self.to_hash_map(leaf.sha,Some(full_path.to_str().unwrap().to_string())));
+            } else { 
+                ret.insert(full_path.to_str().unwrap().to_string(),GitRepo::hash_obj(None,full_path,ObjectType::Blob).unwrap());
+            }
+        }
+        
+        
+        ret
     }
 }

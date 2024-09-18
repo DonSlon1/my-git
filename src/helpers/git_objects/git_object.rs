@@ -312,4 +312,14 @@ impl GitRepo {
         }
         Some(candidates)
     }
+    pub fn get_active_branch(&self) -> Option<String> {
+        let file_path = self.repo_file("HEAD".into(), false).unwrap();
+        if file_path.exists() {
+            let file_content = std::fs::read_to_string(file_path).unwrap();
+            if file_content.starts_with("ref: refs/heads/") {
+                return Some(file_content[16..file_content.len() - 1].to_string());
+            }
+        }
+        None
+    }
 }
