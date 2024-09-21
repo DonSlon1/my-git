@@ -1,9 +1,7 @@
 mod commands;
 pub mod helpers;
 
-use crate::commands::commands::{
-    check_git_ignore, checkout, ls_files, ls_tree, rev_parse, show_ref, status, tag,
-};
+use crate::commands::commands::{check_git_ignore, checkout, ls_files, ls_tree, remove, rev_parse, show_ref, status, tag};
 use clap::{Parser, Subcommand};
 use commands::commands::{add, cat_file, hash_obj, init, log};
 use helpers::git_objects::git_object::ObjectType;
@@ -37,8 +35,7 @@ enum Commands {
         path: String,
     },
     Rm {
-        #[clap(default_value_t = helpers::file::get_exe_dir())]
-        path: String,
+        paths: Vec<PathBuf>,
     },
     CatFile {
         object_type: ObjectType,
@@ -99,9 +96,7 @@ fn main() {
         Commands::Commit { path: _path } => {
             println!("'myapp commit' was used");
         }
-        Commands::Rm { path: _path } => {
-            println!("'myapp rm' was used");
-        }
+        Commands::Rm { paths } => remove(paths),
         Commands::CatFile {
             object_type,
             object,

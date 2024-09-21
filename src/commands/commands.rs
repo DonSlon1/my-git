@@ -306,6 +306,11 @@ pub fn status() {
     }
 }
 
+pub fn remove(paths: &Vec<PathBuf>) {
+    let repo = GitRepo::repo_find(".".into()).unwrap();
+    repo.rm(paths,true,false).unwrap()
+}
+
 fn get_user_by_uid(uid: u32) -> Result<User, &'static str> {
     let user = fs::metadata(format!("/proc/self/fd/0")).map_err(|_| "Failed to get user")?;
     Ok(User {
